@@ -129,10 +129,10 @@ export async function addFoodEntry(
 ): Promise<void> {
   const dayDoc = await getDayDocument(uid, date);
   const fullEntry: FoodEntry = {
-    id: 'id' in entry && entry.id ? entry.id : generateId(),
-    createdAt: 'createdAt' in entry && entry.createdAt ? entry.createdAt : Date.now(),
     ...entry,
-  };
+    id: ('id' in entry && entry.id) ? entry.id : generateId(),
+    createdAt: ('createdAt' in entry && entry.createdAt) ? entry.createdAt : Date.now(),
+  } as FoodEntry;
   dayDoc.meals[mealType].entries.push(fullEntry);
   dayDoc.totals = recalculateTotals(dayDoc);
   await saveDayDocument(uid, dayDoc);
@@ -214,13 +214,21 @@ export function subscribeToDay(
 ): () => void {
   const ref = doc(db, 'users', uid, 'days', date);
 
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) {
-      callback(snap.data() as DayDocument);
-    } else {
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        callback(snap.data() as DayDocument);
+      } else {
+        callback(createEmptyDay(date));
+      }
+    },
+    (error) => {
+      console.error('subscribeToDay error:', error);
+      // Still provide empty data so the UI doesn't break
       callback(createEmptyDay(date));
-    }
-  });
+    },
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -263,13 +271,20 @@ export function subscribeToSettings(
 ): () => void {
   const ref = doc(db, 'users', uid, 'settings', 'config');
 
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) {
-      callback(snap.data() as UserSettings);
-    } else {
+  return onSnapshot(
+    ref,
+    (snap) => {
+      if (snap.exists()) {
+        callback(snap.data() as UserSettings);
+      } else {
+        callback({ ...DEFAULT_SETTINGS });
+      }
+    },
+    (error) => {
+      console.error('subscribeToSettings error:', error);
       callback({ ...DEFAULT_SETTINGS });
-    }
-  });
+    },
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
