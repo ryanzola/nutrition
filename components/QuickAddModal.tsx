@@ -75,7 +75,7 @@ const FIELDS: FieldDef[] = [
 
 const SERVING_UNITS = [
   'g', 'mg', 'oz', 'fl oz', 'ml', 'L',
-  'cup', 'tbsp', 'tsp',
+  'cup', 'tbsp', 'tsp', 'can',
   'piece', 'slice', 'scoop', 'bar',
 ];
 
