@@ -128,9 +128,6 @@ export default function MealScreen() {
           <Text style={[styles.actionLabel, { color: theme.colors.textTertiary }]}>
             Scan With AI
           </Text>
-          <View style={styles.comingSoonBadge}>
-            <Text style={styles.comingSoonText}>Soon</Text>
-          </View>
         </View>
 
         {/* Quick Add */}

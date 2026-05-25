@@ -18,6 +18,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { theme } from '@/constants/theme';
 import type { FoodEntry } from '@/types';
@@ -55,6 +56,7 @@ interface FieldDef {
 
 const FIELDS: FieldDef[] = [
   { key: 'name',     label: 'Name',     placeholder: 'E.g. Apple', suffix: '',   numeric: false },
+  { key: 'servings', label: 'Servings', placeholder: '1',           suffix: '×',  numeric: true },
   { key: 'calories', label: 'Calories', placeholder: 'E.g. 500',   suffix: 'Cal', numeric: true },
   { key: 'carbs',    label: 'Carbs',    placeholder: '0',           suffix: 'g',  numeric: true },
   { key: 'fat',      label: 'Fat',      placeholder: '0',           suffix: 'g',  numeric: true },
@@ -78,6 +80,7 @@ export default function QuickAddModal({
     if (visible) {
       setForm({
         name:     initialValues?.name ?? '',
+        servings: '1',
         calories: initialValues?.calories != null ? String(initialValues.calories) : '',
         carbs:    initialValues?.carbs != null ? String(initialValues.carbs) : '',
         fat:      initialValues?.fat != null ? String(initialValues.fat) : '',
@@ -92,14 +95,16 @@ export default function QuickAddModal({
 
   const handleAdd = () => {
     if (!canSubmit) return;
+    const servings = Math.max(toNum(form.servings) || 1, 0.01);
+    const servingsLabel = servings !== 1 ? ` (×${servings})` : '';
     onAdd({
-      name:     form.name.trim(),
-      calories: toNum(form.calories),
-      carbs:    toNum(form.carbs),
-      fat:      toNum(form.fat),
-      protein:  toNum(form.protein),
-      sodium:   toNum(form.sodium),
-      sugar:    toNum(form.sugar),
+      name:     form.name.trim() + servingsLabel,
+      calories: Math.round(toNum(form.calories) * servings),
+      carbs:    Math.round(toNum(form.carbs) * servings * 10) / 10,
+      fat:      Math.round(toNum(form.fat) * servings * 10) / 10,
+      protein:  Math.round(toNum(form.protein) * servings * 10) / 10,
+      sodium:   Math.round(toNum(form.sodium) * servings),
+      sugar:    Math.round(toNum(form.sugar) * servings * 10) / 10,
     });
   };
 
@@ -113,7 +118,8 @@ export default function QuickAddModal({
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.screen}>
+      <SafeAreaProvider>
+      <SafeAreaView style={styles.screen} edges={['top']}>
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -176,7 +182,8 @@ export default function QuickAddModal({
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
-      </View>
+      </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -196,7 +203,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
-    paddingTop: theme.spacing.huge,
+    paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.md,
     backgroundColor: theme.colors.background,
   },
