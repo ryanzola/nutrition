@@ -60,15 +60,15 @@ interface FieldDef {
 }
 
 const FIELDS: FieldDef[] = [
-  { key: 'name',        label: 'Name',         placeholder: 'E.g. Apple',      suffix: '',    numeric: false },
-  { key: 'servingSize', label: 'Serving Size', placeholder: 'E.g. 2 cups, 479g', suffix: '',    numeric: false },
-  { key: 'servings',    label: 'Servings',     placeholder: '1',               suffix: '×',   numeric: true },
-  { key: 'calories',    label: 'Calories',     placeholder: 'E.g. 500',        suffix: 'Cal', numeric: true },
-  { key: 'carbs',       label: 'Carbs',        placeholder: '0',               suffix: 'g',   numeric: true },
-  { key: 'fat',         label: 'Fat',          placeholder: '0',               suffix: 'g',   numeric: true },
-  { key: 'protein',     label: 'Protein',      placeholder: '0',               suffix: 'g',   numeric: true },
-  { key: 'sodium',      label: 'Sodium',       placeholder: '0',               suffix: 'mg',  numeric: true },
-  { key: 'sugar',       label: 'Sugar',        placeholder: '0',               suffix: 'g',   numeric: true },
+  { key: 'name',           label: 'Name',           placeholder: 'E.g. Apple', suffix: '',    numeric: false },
+  { key: 'servingAmount',  label: 'Serving Size',   placeholder: '0',          suffix: '',    numeric: true },
+  { key: 'servings',       label: 'Servings',       placeholder: '1',          suffix: '×',   numeric: true },
+  { key: 'calories',       label: 'Calories',       placeholder: 'E.g. 500',   suffix: 'Cal', numeric: true },
+  { key: 'carbs',          label: 'Carbs',          placeholder: '0',          suffix: 'g',   numeric: true },
+  { key: 'fat',            label: 'Fat',            placeholder: '0',          suffix: 'g',   numeric: true },
+  { key: 'protein',        label: 'Protein',        placeholder: '0',          suffix: 'g',   numeric: true },
+  { key: 'sodium',         label: 'Sodium',         placeholder: '0',          suffix: 'mg',  numeric: true },
+  { key: 'sugar',          label: 'Sugar',          placeholder: '0',          suffix: 'g',   numeric: true },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -87,15 +87,16 @@ export default function QuickAddModal({
   useEffect(() => {
     if (visible) {
       setForm({
-        name:        initialValues?.name ?? '',
-        servingSize: initialValues?.servingSize ?? '',
-        servings:    '1',
-        calories:    initialValues?.calories != null ? String(initialValues.calories) : '',
-        carbs:       initialValues?.carbs != null ? String(initialValues.carbs) : '',
-        fat:         initialValues?.fat != null ? String(initialValues.fat) : '',
-        protein:     initialValues?.protein != null ? String(initialValues.protein) : '',
-        sodium:      initialValues?.sodium != null ? String(initialValues.sodium) : '',
-        sugar:       initialValues?.sugar != null ? String(initialValues.sugar) : '',
+        name:          initialValues?.name ?? '',
+        servingAmount: initialValues?.servingAmount != null ? String(initialValues.servingAmount) : '',
+        servingUnit:   initialValues?.servingUnit ?? '',
+        servings:      '1',
+        calories:      initialValues?.calories != null ? String(initialValues.calories) : '',
+        carbs:         initialValues?.carbs != null ? String(initialValues.carbs) : '',
+        fat:           initialValues?.fat != null ? String(initialValues.fat) : '',
+        protein:       initialValues?.protein != null ? String(initialValues.protein) : '',
+        sodium:        initialValues?.sodium != null ? String(initialValues.sodium) : '',
+        sugar:         initialValues?.sugar != null ? String(initialValues.sugar) : '',
       });
     }
   }, [visible, initialValues]);
@@ -106,15 +107,18 @@ export default function QuickAddModal({
     if (!canSubmit) return;
     const servings = Math.max(toNum(form.servings) || 1, 0.01);
     const servingsLabel = servings !== 1 ? ` (×${servings})` : '';
+    const servingAmt = toNum(form.servingAmount);
+    const servingUnit = form.servingUnit?.trim() || undefined;
     onAdd({
-      name:        form.name.trim() + servingsLabel,
-      servingSize: form.servingSize?.trim() || undefined,
-      calories:    Math.round(toNum(form.calories) * servings),
-      carbs:       Math.round(toNum(form.carbs) * servings * 10) / 10,
-      fat:         Math.round(toNum(form.fat) * servings * 10) / 10,
-      protein:     Math.round(toNum(form.protein) * servings * 10) / 10,
-      sodium:      Math.round(toNum(form.sodium) * servings),
-      sugar:       Math.round(toNum(form.sugar) * servings * 10) / 10,
+      name:          form.name.trim() + servingsLabel,
+      servingAmount: servingAmt > 0 ? servingAmt : undefined,
+      servingUnit:   servingAmt > 0 ? servingUnit : undefined,
+      calories:      Math.round(toNum(form.calories) * servings),
+      carbs:         Math.round(toNum(form.carbs) * servings * 10) / 10,
+      fat:           Math.round(toNum(form.fat) * servings * 10) / 10,
+      protein:       Math.round(toNum(form.protein) * servings * 10) / 10,
+      sodium:        Math.round(toNum(form.sodium) * servings),
+      sugar:         Math.round(toNum(form.sugar) * servings * 10) / 10,
     });
   };
 
@@ -177,23 +181,62 @@ export default function QuickAddModal({
                   <View style={styles.fieldRow}>
                     <Text style={styles.fieldLabel}>{field.label}</Text>
 
-                    <View style={styles.inputWrapper}>
-                      <TextInput
-                        style={styles.input}
-                        value={form[field.key] ?? ''}
-                        onChangeText={(v) => updateField(field.key, v)}
-                        placeholder={field.placeholder}
-                        placeholderTextColor={theme.colors.textTertiary}
-                        keyboardType={field.numeric ? 'numeric' : 'default'}
-                        returnKeyType={
-                          index < FIELDS.length - 1 ? 'next' : 'done'
-                        }
-                      />
-                      {field.suffix !== '' && (
-                        <Text style={styles.suffix}>{field.suffix}</Text>
-                      )}
-                    </View>
+                    {field.key === 'servingAmount' ? (
+                      /* Serving Size: amount + unit side by side */
+                      <View style={styles.servingSizeRow}>
+                        <TextInput
+                          style={[styles.input, styles.servingAmountInput]}
+                          value={form.servingAmount ?? ''}
+                          onChangeText={(v) => updateField('servingAmount', v)}
+                          placeholder="0"
+                          placeholderTextColor={theme.colors.textTertiary}
+                          keyboardType="numeric"
+                          returnKeyType="next"
+                        />
+                        <TextInput
+                          style={[styles.input, styles.servingUnitInput]}
+                          value={form.servingUnit ?? ''}
+                          onChangeText={(v) => updateField('servingUnit', v)}
+                          placeholder="oz, g, cups"
+                          placeholderTextColor={theme.colors.textTertiary}
+                          returnKeyType="next"
+                        />
+                      </View>
+                    ) : (
+                      <View style={styles.inputWrapper}>
+                        <TextInput
+                          style={styles.input}
+                          value={form[field.key] ?? ''}
+                          onChangeText={(v) => updateField(field.key, v)}
+                          placeholder={field.placeholder}
+                          placeholderTextColor={theme.colors.textTertiary}
+                          keyboardType={field.numeric ? 'numeric' : 'default'}
+                          returnKeyType={
+                            index < FIELDS.length - 1 ? 'next' : 'done'
+                          }
+                        />
+                        {field.suffix !== '' && (
+                          <Text style={styles.suffix}>{field.suffix}</Text>
+                        )}
+                      </View>
+                    )}
                   </View>
+
+                  {/* Computed total after Servings row */}
+                  {field.key === 'servings' &&
+                    toNum(form.servingAmount) > 0 &&
+                    (form.servingUnit ?? '').trim().length > 0 && (
+                      <View style={styles.computedRow}>
+                        <Text style={styles.computedText}>
+                          = {Math.round(
+                              toNum(form.servingAmount) *
+                              Math.max(toNum(form.servings) || 1, 0.01) *
+                              100,
+                            ) / 100}{' '}
+                          {form.servingUnit?.trim()}
+                        </Text>
+                      </View>
+                    )}
 
                   {index < FIELDS.length - 1 && (
                     <View style={styles.separator} />
@@ -297,5 +340,29 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: theme.colors.border,
     marginLeft: theme.spacing.lg,
+  },
+  servingSizeRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+  },
+  servingAmountInput: {
+    flex: 0,
+    width: 50,
+    textAlign: 'right',
+  },
+  servingUnitInput: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  computedRow: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.sm,
+  },
+  computedText: {
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.accent,
+    textAlign: 'right',
   },
 });

@@ -72,6 +72,8 @@ export default function CreateRecipeScreen() {
         ...prev,
         {
           name: fav.name,
+          servingAmount: fav.servingAmount,
+          servingUnit: fav.servingUnit,
           calories: fav.calories,
           carbs: fav.carbs,
           fat: fav.fat,

@@ -122,6 +122,8 @@ export default function DashboardScreen() {
               // Toggle favorite
               toggleFavorite({
                 name: entry.name,
+                servingAmount: entry.servingAmount,
+                servingUnit: entry.servingUnit,
                 calories: entry.calories,
                 carbs: entry.carbs,
                 fat: entry.fat,
@@ -156,6 +158,8 @@ export default function DashboardScreen() {
             text: favLabel,
             onPress: () => toggleFavorite({
               name: entry.name,
+              servingAmount: entry.servingAmount,
+              servingUnit: entry.servingUnit,
               calories: entry.calories,
               carbs: entry.carbs,
               fat: entry.fat,
@@ -347,6 +351,8 @@ export default function DashboardScreen() {
         isFavorited={editEntry ? isFavorited(editEntry.name) : false}
         onToggleFavorite={editEntry ? () => toggleFavorite({
           name: editEntry.name,
+          servingAmount: editEntry.servingAmount,
+          servingUnit: editEntry.servingUnit,
           calories: editEntry.calories,
           carbs: editEntry.carbs,
           fat: editEntry.fat,

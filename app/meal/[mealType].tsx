@@ -340,6 +340,8 @@ export default function MealScreen() {
         isFavorited={selectedFavorite ? isFavorited(selectedFavorite.name) : false}
         onToggleFavorite={selectedFavorite ? () => toggleFavorite({
           name: selectedFavorite.name,
+          servingAmount: selectedFavorite.servingAmount,
+          servingUnit: selectedFavorite.servingUnit,
           calories: selectedFavorite.calories,
           carbs: selectedFavorite.carbs,
           fat: selectedFavorite.fat,

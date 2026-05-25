@@ -16,8 +16,10 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 export interface FoodEntry {
   id: string;
   name: string;
-  /** Human-readable serving size reference (e.g. "479g", "2 cups"). */
-  servingSize?: string;
+  /** Numeric amount for one serving (e.g. 3). */
+  servingAmount?: number;
+  /** Unit of measure for one serving (e.g. "oz", "cups", "g"). */
+  servingUnit?: string;
   calories: number;
   carbs: number;
   fat: number;
@@ -118,8 +120,10 @@ export interface UserSettings {
 export interface FavoriteFood {
   id: string;
   name: string;
-  /** Human-readable serving size reference (e.g. "479g", "2 cups"). */
-  servingSize?: string;
+  /** Numeric amount for one serving (e.g. 3). */
+  servingAmount?: number;
+  /** Unit of measure for one serving (e.g. "oz", "cups", "g"). */
+  servingUnit?: string;
   calories: number;
   carbs: number;
   fat: number;
