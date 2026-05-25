@@ -199,6 +199,7 @@ export default function QuickAddModal({
                           onChangeText={(v) => updateField('servingUnit', v)}
                           placeholder="oz, g, cups"
                           placeholderTextColor={theme.colors.textTertiary}
+                          autoCapitalize="none"
                           returnKeyType="next"
                         />
                       </View>
