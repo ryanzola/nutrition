@@ -23,6 +23,8 @@ interface MacroBarProps {
   color: string;
   /** Unit suffix (defaults to "g"). */
   unit?: string;
+  /** Color when exceeded (defaults to danger red). */
+  exceededColor?: string;
 }
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -33,14 +35,16 @@ export default function MacroBar({
   goal,
   color,
   unit = 'g',
+  exceededColor,
 }: MacroBarProps) {
   const exceeded = goal > 0 && current > goal;
+  const overColor = exceededColor ?? theme.colors.danger;
   const ratio = goal > 0 ? Math.min(current / goal, 1) : 0;
-  const barColor = exceeded ? theme.colors.danger : color;
+  const barColor = exceeded ? overColor : color;
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, exceeded && { color: theme.colors.danger }]}>{label}</Text>
+      <Text style={[styles.label, exceeded && { color: overColor }]}>{label}</Text>
 
       {/* Track */}
       <View style={styles.track}>
@@ -52,7 +56,7 @@ export default function MacroBar({
         />
       </View>
 
-      <Text style={[styles.values, exceeded && { color: theme.colors.danger }]}>
+      <Text style={[styles.values, exceeded && { color: overColor }]}>
         {current} / {goal} {unit}
       </Text>
     </View>

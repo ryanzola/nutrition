@@ -277,6 +277,7 @@ export default function DashboardScreen() {
                 goal={settings.proteinGoal}
                 color={theme.colors.protein}
                 unit="g"
+                exceededColor={theme.colors.accent}
               />
             </View>
           </View>
