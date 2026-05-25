@@ -14,6 +14,8 @@ import {
   Pressable,
   StyleSheet,
   Alert,
+  ActionSheetIOS,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -21,20 +23,23 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useApp } from '@/context/AppContext';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useFavorites } from '@/hooks/useFavorites';
 import { theme } from '@/constants/theme';
-import type { FoodEntry, NutritionTotals } from '@/types';
+import type { FoodEntry, FavoriteFood, NutritionTotals } from '@/types';
 
 import QuickAddModal from '@/components/QuickAddModal';
 
 export default function CreateRecipeScreen() {
   const { uid } = useApp();
   const { createRecipe } = useRecipes(uid);
+  const { favorites } = useFavorites(uid);
 
   const [name, setName] = useState('');
   const [ingredients, setIngredients] = useState<Omit<FoodEntry, 'id' | 'createdAt'>[]>(
     [],
   );
   const [quickAddVisible, setQuickAddVisible] = useState(false);
+  const [favPickerVisible, setFavPickerVisible] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // ── Computed totals ────────────────────────────────────────────────────
@@ -60,6 +65,52 @@ export default function CreateRecipeScreen() {
     },
     [],
   );
+
+  const handleAddFavoriteAsIngredient = useCallback(
+    (fav: FavoriteFood) => {
+      setIngredients((prev) => [
+        ...prev,
+        {
+          name: fav.name,
+          calories: fav.calories,
+          carbs: fav.carbs,
+          fat: fav.fat,
+          protein: fav.protein,
+          sodium: fav.sodium,
+          sugar: fav.sugar,
+        },
+      ]);
+      setFavPickerVisible(false);
+    },
+    [],
+  );
+
+  const handleAddPress = useCallback(() => {
+    if (favorites.length === 0) {
+      // No favorites — go straight to quick add
+      setQuickAddVisible(true);
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['From Favorites', 'New Ingredient', 'Cancel'],
+          cancelButtonIndex: 2,
+        },
+        (idx) => {
+          if (idx === 0) setFavPickerVisible(true);
+          else if (idx === 1) setQuickAddVisible(true);
+        },
+      );
+    } else {
+      Alert.alert('Add Ingredient', 'Choose a source', [
+        { text: 'From Favorites', onPress: () => setFavPickerVisible(true) },
+        { text: 'New Ingredient', onPress: () => setQuickAddVisible(true) },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
+  }, [favorites.length]);
 
   const handleRemoveIngredient = useCallback((index: number) => {
     setIngredients((prev) => prev.filter((_, i) => i !== index));
@@ -142,7 +193,7 @@ export default function CreateRecipeScreen() {
             </Text>
             <Pressable
               style={styles.addButton}
-              onPress={() => setQuickAddVisible(true)}
+              onPress={handleAddPress}
             >
               <Ionicons name="add" size={18} color={theme.colors.background} />
               <Text style={styles.addButtonText}>Add</Text>
@@ -198,6 +249,45 @@ export default function CreateRecipeScreen() {
         onClose={() => setQuickAddVisible(false)}
         onAdd={handleAddIngredient}
       />
+
+      {/* Favorites Picker Modal */}
+      {favPickerVisible && (
+        <View style={styles.favOverlay}>
+          <SafeAreaView style={styles.favContainer} edges={['top']}>
+            <View style={styles.favHeader}>
+              <Pressable onPress={() => setFavPickerVisible(false)} hitSlop={8}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </Pressable>
+              <Text style={styles.headerTitle}>Pick a Favorite</Text>
+              <View style={{ width: 50 }} />
+            </View>
+            <ScrollView
+              style={styles.content}
+              contentContainerStyle={styles.contentInner}
+            >
+              {favorites.map((fav) => (
+                <Pressable
+                  key={fav.id}
+                  style={styles.ingredientRow}
+                  onPress={() => handleAddFavoriteAsIngredient(fav)}
+                >
+                  <View style={styles.ingredientInfo}>
+                    <Text style={styles.ingredientName}>{fav.name}</Text>
+                    <Text style={styles.ingredientMeta}>
+                      {fav.calories} Cal · {fav.protein}g P · {fav.carbs}g C · {fav.fat}g F
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="add-circle-outline"
+                    size={24}
+                    color={theme.colors.accent}
+                  />
+                </Pressable>
+              ))}
+            </ScrollView>
+          </SafeAreaView>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -369,5 +459,21 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.xs,
     fontWeight: theme.fontWeight.regular,
     color: theme.colors.textSecondary,
+  },
+  favOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: theme.colors.background,
+    zIndex: 10,
+  },
+  favContainer: {
+    flex: 1,
+    backgroundColor: theme.colors.background,
+  },
+  favHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
   },
 });
