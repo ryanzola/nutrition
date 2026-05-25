@@ -113,10 +113,13 @@ export async function getDayDocument(uid: string, date: string): Promise<DayDocu
 
 /**
  * Writes (or overwrites) a full day document.
+ * Strips undefined values since Firestore rejects them.
  */
 export async function saveDayDocument(uid: string, dayDoc: DayDocument): Promise<void> {
   const ref = doc(db, 'users', uid, 'days', dayDoc.date);
-  await setDoc(ref, dayDoc);
+  // JSON round-trip drops keys with `undefined` values
+  const cleaned = JSON.parse(JSON.stringify(dayDoc));
+  await setDoc(ref, cleaned);
 }
 
 /**
