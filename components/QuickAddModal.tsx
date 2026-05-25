@@ -19,6 +19,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
 import { theme } from '@/constants/theme';
 import type { FoodEntry } from '@/types';
@@ -34,6 +35,10 @@ interface QuickAddModalProps {
   onAdd: (entry: Omit<FoodEntry, 'id' | 'createdAt'>) => void;
   /** Pre-fill values for edit mode. */
   initialValues?: Partial<FoodEntry>;
+  /** Whether the current food is favorited. */
+  isFavorited?: boolean;
+  /** Called when the heart icon is tapped. */
+  onToggleFavorite?: () => void;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -72,6 +77,8 @@ export default function QuickAddModal({
   onClose,
   onAdd,
   initialValues,
+  isFavorited = false,
+  onToggleFavorite,
 }: QuickAddModalProps) {
   const [form, setForm] = useState<Record<string, string>>({});
 
@@ -132,16 +139,27 @@ export default function QuickAddModal({
 
             <Text style={styles.headerTitle}>Quick-add Food</Text>
 
-            <Pressable onPress={handleAdd} hitSlop={8} disabled={!canSubmit}>
-              <Text
-                style={[
-                  styles.addText,
-                  !canSubmit && styles.addTextDisabled,
-                ]}
-              >
-                Add
-              </Text>
-            </Pressable>
+            <View style={styles.headerRight}>
+              {onToggleFavorite && (
+                <Pressable onPress={onToggleFavorite} hitSlop={8} style={styles.heartButton}>
+                  <Ionicons
+                    name={isFavorited ? 'heart' : 'heart-outline'}
+                    size={22}
+                    color={isFavorited ? '#FF4B6E' : theme.colors.textSecondary}
+                  />
+                </Pressable>
+              )}
+              <Pressable onPress={handleAdd} hitSlop={8} disabled={!canSubmit}>
+                <Text
+                  style={[
+                    styles.addText,
+                    !canSubmit && styles.addTextDisabled,
+                  ]}
+                >
+                  Add
+                </Text>
+              </Pressable>
+            </View>
           </View>
 
           {/* Form */}
@@ -224,6 +242,14 @@ const styles = StyleSheet.create({
   },
   addTextDisabled: {
     opacity: 0.35,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.md,
+  },
+  heartButton: {
+    padding: 2,
   },
   scrollContent: {
     padding: theme.spacing.lg,

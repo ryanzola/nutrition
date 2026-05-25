@@ -22,8 +22,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { useDay } from '@/hooks/useDay';
 import { useRecipes } from '@/hooks/useRecipes';
+import { useFavorites } from '@/hooks/useFavorites';
 import { theme } from '@/constants/theme';
-import type { MealType, FoodEntry, Recipe } from '@/types';
+import type { MealType, FoodEntry, FavoriteFood, Recipe } from '@/types';
 
 import QuickAddModal from '@/components/QuickAddModal';
 
@@ -35,9 +36,11 @@ export default function MealScreen() {
   const { uid, selectedDate } = useApp();
   const { dayData, addEntry } = useDay(uid, selectedDate);
   const { recipes } = useRecipes(uid);
+  const { favorites, isFavorited, toggleFavorite } = useFavorites(uid);
 
   const [quickAddVisible, setQuickAddVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState<'recent' | 'recipes'>('recent');
+  const [selectedFavorite, setSelectedFavorite] = useState<FavoriteFood | null>(null);
+  const [activeTab, setActiveTab] = useState<'recent' | 'favorites' | 'recipes'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Recent entries from today's data across all meals
@@ -55,6 +58,7 @@ export default function MealScreen() {
     async (entry: Omit<FoodEntry, 'id' | 'createdAt'>) => {
       await addEntry(mealType, entry);
       setQuickAddVisible(false);
+      setSelectedFavorite(null);
       router.back();
     },
     [addEntry, mealType],
@@ -94,6 +98,29 @@ export default function MealScreen() {
     },
     [addEntry, mealType],
   );
+
+  const handleAddFavoriteToMeal = useCallback(
+    (favorite: FavoriteFood) => {
+      // Open QuickAddModal pre-filled so user can adjust servings
+      setSelectedFavorite(favorite);
+      setQuickAddVisible(true);
+    },
+    [],
+  );
+
+  // Filter items by search query
+  const filterBySearch = useCallback(
+    <T extends { name: string }>(items: T[]): T[] => {
+      if (!searchQuery.trim()) return items;
+      const q = searchQuery.toLowerCase();
+      return items.filter((item) => item.name.toLowerCase().includes(q));
+    },
+    [searchQuery],
+  );
+
+  const filteredRecent = filterBySearch(recentEntries);
+  const filteredFavorites = filterBySearch(favorites);
+  const filteredRecipes = filterBySearch(recipes);
 
   // ── Render ─────────────────────────────────────────────────────────────
   return (
@@ -162,6 +189,16 @@ export default function MealScreen() {
           </Text>
         </Pressable>
         <Pressable
+          style={[styles.tab, activeTab === 'favorites' && styles.tabActive]}
+          onPress={() => setActiveTab('favorites')}
+        >
+          <Text
+            style={[styles.tabText, activeTab === 'favorites' && styles.tabTextActive]}
+          >
+            Favorites
+          </Text>
+        </Pressable>
+        <Pressable
           style={[styles.tab, activeTab === 'recipes' && styles.tabActive]}
           onPress={() => setActiveTab('recipes')}
         >
@@ -180,7 +217,7 @@ export default function MealScreen() {
         showsVerticalScrollIndicator={false}
       >
         {activeTab === 'recent' ? (
-          recentEntries.length === 0 ? (
+          filteredRecent.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons
                 name="time-outline"
@@ -193,7 +230,7 @@ export default function MealScreen() {
               </Text>
             </View>
           ) : (
-            recentEntries.map((entry) => (
+            filteredRecent.map((entry) => (
               <Pressable
                 key={entry.id}
                 style={styles.foodRow}
@@ -214,7 +251,42 @@ export default function MealScreen() {
               </Pressable>
             ))
           )
-        ) : recipes.length === 0 ? (
+        ) : activeTab === 'favorites' ? (
+          filteredFavorites.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="heart-outline"
+                size={48}
+                color={theme.colors.textTertiary}
+              />
+              <Text style={styles.emptyText}>No favorites yet</Text>
+              <Text style={styles.emptySubtext}>
+                Long-press a food entry or tap the heart icon to save favorites
+              </Text>
+            </View>
+          ) : (
+            filteredFavorites.map((fav) => (
+              <Pressable
+                key={fav.id}
+                style={styles.foodRow}
+                onPress={() => handleAddFavoriteToMeal(fav)}
+              >
+                <View style={styles.foodRowLeft}>
+                  <Text style={styles.foodName}>{fav.name}</Text>
+                  <Text style={styles.foodMeta}>
+                    {fav.calories} Cal · {fav.protein}g P · {fav.carbs}g C ·{' '}
+                    {fav.fat}g F
+                  </Text>
+                </View>
+                <Ionicons
+                  name="add-circle-outline"
+                  size={24}
+                  color={theme.colors.accent}
+                />
+              </Pressable>
+            ))
+          )
+        ) : filteredRecipes.length === 0 ? (
           <View style={styles.emptyState}>
             <Ionicons
               name="book-outline"
@@ -259,8 +331,22 @@ export default function MealScreen() {
       {/* Quick Add Modal */}
       <QuickAddModal
         visible={quickAddVisible}
-        onClose={() => setQuickAddVisible(false)}
+        onClose={() => {
+          setQuickAddVisible(false);
+          setSelectedFavorite(null);
+        }}
         onAdd={handleQuickAdd}
+        initialValues={selectedFavorite ?? undefined}
+        isFavorited={selectedFavorite ? isFavorited(selectedFavorite.name) : false}
+        onToggleFavorite={selectedFavorite ? () => toggleFavorite({
+          name: selectedFavorite.name,
+          calories: selectedFavorite.calories,
+          carbs: selectedFavorite.carbs,
+          fat: selectedFavorite.fat,
+          protein: selectedFavorite.protein,
+          sodium: selectedFavorite.sodium,
+          sugar: selectedFavorite.sugar,
+        }) : undefined}
       />
     </SafeAreaView>
   );

@@ -22,6 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useApp, getDateString } from '@/context/AppContext';
 import { useDay } from '@/hooks/useDay';
+import { useFavorites } from '@/hooks/useFavorites';
 import { theme } from '@/constants/theme';
 import { MEAL_TYPES } from '@/constants/defaults';
 import type { MealType, FoodEntry } from '@/types';
@@ -39,6 +40,7 @@ export default function DashboardScreen() {
     uid,
     selectedDate,
   );
+  const { isFavorited, toggleFavorite } = useFavorites(uid);
 
   // ── Modal / sheet state ────────────────────────────────────────────────
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -98,7 +100,9 @@ export default function DashboardScreen() {
         (m) => `Move to ${m.charAt(0).toUpperCase() + m.slice(1)}`,
       );
 
-      const options = ['Edit', 'Delete', ...moveLabels, 'Cancel'];
+      const isFav = isFavorited(entry.name);
+      const favLabel = isFav ? 'Remove from Favorites' : '⭐ Add to Favorites';
+      const options = ['Edit', 'Delete', favLabel, ...moveLabels, 'Cancel'];
       const cancelIndex = options.length - 1;
       const destructiveIndex = 1;
 
@@ -114,9 +118,20 @@ export default function DashboardScreen() {
             } else if (idx === 1) {
               // Delete
               deleteEntry(mealType, entry.id);
+            } else if (idx === 2) {
+              // Toggle favorite
+              toggleFavorite({
+                name: entry.name,
+                calories: entry.calories,
+                carbs: entry.carbs,
+                fat: entry.fat,
+                protein: entry.protein,
+                sodium: entry.sodium,
+                sugar: entry.sugar,
+              });
             } else if (idx < cancelIndex) {
               // Move
-              const targetMeal = otherMeals[idx - 2];
+              const targetMeal = otherMeals[idx - 3];
               moveEntry(mealType, targetMeal, entry.id);
             }
           },
@@ -137,11 +152,23 @@ export default function DashboardScreen() {
             style: 'destructive',
             onPress: () => deleteEntry(mealType, entry.id),
           },
+          {
+            text: favLabel,
+            onPress: () => toggleFavorite({
+              name: entry.name,
+              calories: entry.calories,
+              carbs: entry.carbs,
+              fat: entry.fat,
+              protein: entry.protein,
+              sodium: entry.sodium,
+              sugar: entry.sugar,
+            }),
+          },
           { text: 'Cancel', style: 'cancel' },
         ]);
       }
     },
-    [deleteEntry, moveEntry],
+    [deleteEntry, moveEntry, isFavorited, toggleFavorite],
   );
 
   const handleQuickAdd = useCallback(
@@ -316,6 +343,16 @@ export default function DashboardScreen() {
         onClose={handleQuickAddClose}
         onAdd={handleQuickAdd}
         initialValues={editEntry ?? undefined}
+        isFavorited={editEntry ? isFavorited(editEntry.name) : false}
+        onToggleFavorite={editEntry ? () => toggleFavorite({
+          name: editEntry.name,
+          calories: editEntry.calories,
+          carbs: editEntry.carbs,
+          fat: editEntry.fat,
+          protein: editEntry.protein,
+          sodium: editEntry.sodium,
+          sugar: editEntry.sugar,
+        }) : undefined}
       />
     </SafeAreaView>
   );

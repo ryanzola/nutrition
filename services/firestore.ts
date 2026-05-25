@@ -25,6 +25,7 @@ import { db } from '../firebase';
 import { DEFAULT_SETTINGS } from '../constants/defaults';
 import type {
   DayDocument,
+  FavoriteFood,
   FoodEntry,
   MealType,
   NutritionTotals,
@@ -345,4 +346,60 @@ export function subscribeToRecipes(
     const recipes = snap.docs.map((d) => d.data() as Recipe);
     callback(recipes);
   });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Favorites
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Subscribes to real-time favorite foods list, ordered by creation date.
+ *
+ * @returns An unsubscribe function.
+ */
+export function subscribeToFavorites(
+  uid: string,
+  callback: (favorites: FavoriteFood[]) => void,
+): () => void {
+  const col = collection(db, 'users', uid, 'favorites');
+  const q = query(col, orderBy('createdAt', 'desc'));
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      const favorites = snap.docs.map((d) => d.data() as FavoriteFood);
+      callback(favorites);
+    },
+    (error) => {
+      console.error('subscribeToFavorites error:', error);
+      callback([]);
+    },
+  );
+}
+
+/**
+ * Adds a food to favorites. Stores per-serving nutrition values.
+ */
+export async function addFavorite(
+  uid: string,
+  food: Omit<FavoriteFood, 'id' | 'createdAt'>,
+): Promise<string> {
+  const id = generateId();
+  const favorite: FavoriteFood = {
+    ...food,
+    id,
+    createdAt: Date.now(),
+  };
+
+  const ref = doc(db, 'users', uid, 'favorites', id);
+  await setDoc(ref, favorite);
+  return id;
+}
+
+/**
+ * Removes a food from favorites by ID.
+ */
+export async function removeFavorite(uid: string, favoriteId: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'favorites', favoriteId);
+  await deleteDoc(ref);
 }

@@ -105,3 +105,23 @@ export interface UserSettings {
   /** Target protein percentage of total calories. */
   proteinPercent: number;
 }
+
+// ── Favorite food ───────────────────────────────────────────────────────────
+
+/**
+ * A saved favorite food with per-serving nutrition values.
+ *
+ * Firestore path: `users/{uid}/favorites/{id}`
+ */
+export interface FavoriteFood {
+  id: string;
+  name: string;
+  calories: number;
+  carbs: number;
+  fat: number;
+  protein: number;
+  sodium: number;
+  sugar: number;
+  /** Unix-ms timestamp of when this was favorited. */
+  createdAt: number;
+}
