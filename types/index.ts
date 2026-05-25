@@ -16,6 +16,8 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snacks';
 export interface FoodEntry {
   id: string;
   name: string;
+  /** Human-readable serving size reference (e.g. "479g", "2 cups"). */
+  servingSize?: string;
   calories: number;
   carbs: number;
   fat: number;
@@ -116,6 +118,8 @@ export interface UserSettings {
 export interface FavoriteFood {
   id: string;
   name: string;
+  /** Human-readable serving size reference (e.g. "479g", "2 cups"). */
+  servingSize?: string;
   calories: number;
   carbs: number;
   fat: number;

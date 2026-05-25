@@ -60,14 +60,15 @@ interface FieldDef {
 }
 
 const FIELDS: FieldDef[] = [
-  { key: 'name',     label: 'Name',     placeholder: 'E.g. Apple', suffix: '',   numeric: false },
-  { key: 'servings', label: 'Servings', placeholder: '1',           suffix: '×',  numeric: true },
-  { key: 'calories', label: 'Calories', placeholder: 'E.g. 500',   suffix: 'Cal', numeric: true },
-  { key: 'carbs',    label: 'Carbs',    placeholder: '0',           suffix: 'g',  numeric: true },
-  { key: 'fat',      label: 'Fat',      placeholder: '0',           suffix: 'g',  numeric: true },
-  { key: 'protein',  label: 'Protein',  placeholder: '0',           suffix: 'g',  numeric: true },
-  { key: 'sodium',   label: 'Sodium',   placeholder: '0',           suffix: 'mg', numeric: true },
-  { key: 'sugar',    label: 'Sugar',    placeholder: '0',           suffix: 'g',  numeric: true },
+  { key: 'name',        label: 'Name',         placeholder: 'E.g. Apple',      suffix: '',    numeric: false },
+  { key: 'servingSize', label: 'Serving Size', placeholder: 'E.g. 2 cups, 479g', suffix: '',    numeric: false },
+  { key: 'servings',    label: 'Servings',     placeholder: '1',               suffix: '×',   numeric: true },
+  { key: 'calories',    label: 'Calories',     placeholder: 'E.g. 500',        suffix: 'Cal', numeric: true },
+  { key: 'carbs',       label: 'Carbs',        placeholder: '0',               suffix: 'g',   numeric: true },
+  { key: 'fat',         label: 'Fat',          placeholder: '0',               suffix: 'g',   numeric: true },
+  { key: 'protein',     label: 'Protein',      placeholder: '0',               suffix: 'g',   numeric: true },
+  { key: 'sodium',      label: 'Sodium',       placeholder: '0',               suffix: 'mg',  numeric: true },
+  { key: 'sugar',       label: 'Sugar',        placeholder: '0',               suffix: 'g',   numeric: true },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
@@ -86,14 +87,15 @@ export default function QuickAddModal({
   useEffect(() => {
     if (visible) {
       setForm({
-        name:     initialValues?.name ?? '',
-        servings: '1',
-        calories: initialValues?.calories != null ? String(initialValues.calories) : '',
-        carbs:    initialValues?.carbs != null ? String(initialValues.carbs) : '',
-        fat:      initialValues?.fat != null ? String(initialValues.fat) : '',
-        protein:  initialValues?.protein != null ? String(initialValues.protein) : '',
-        sodium:   initialValues?.sodium != null ? String(initialValues.sodium) : '',
-        sugar:    initialValues?.sugar != null ? String(initialValues.sugar) : '',
+        name:        initialValues?.name ?? '',
+        servingSize: initialValues?.servingSize ?? '',
+        servings:    '1',
+        calories:    initialValues?.calories != null ? String(initialValues.calories) : '',
+        carbs:       initialValues?.carbs != null ? String(initialValues.carbs) : '',
+        fat:         initialValues?.fat != null ? String(initialValues.fat) : '',
+        protein:     initialValues?.protein != null ? String(initialValues.protein) : '',
+        sodium:      initialValues?.sodium != null ? String(initialValues.sodium) : '',
+        sugar:       initialValues?.sugar != null ? String(initialValues.sugar) : '',
       });
     }
   }, [visible, initialValues]);
@@ -105,13 +107,14 @@ export default function QuickAddModal({
     const servings = Math.max(toNum(form.servings) || 1, 0.01);
     const servingsLabel = servings !== 1 ? ` (×${servings})` : '';
     onAdd({
-      name:     form.name.trim() + servingsLabel,
-      calories: Math.round(toNum(form.calories) * servings),
-      carbs:    Math.round(toNum(form.carbs) * servings * 10) / 10,
-      fat:      Math.round(toNum(form.fat) * servings * 10) / 10,
-      protein:  Math.round(toNum(form.protein) * servings * 10) / 10,
-      sodium:   Math.round(toNum(form.sodium) * servings),
-      sugar:    Math.round(toNum(form.sugar) * servings * 10) / 10,
+      name:        form.name.trim() + servingsLabel,
+      servingSize: form.servingSize?.trim() || undefined,
+      calories:    Math.round(toNum(form.calories) * servings),
+      carbs:       Math.round(toNum(form.carbs) * servings * 10) / 10,
+      fat:         Math.round(toNum(form.fat) * servings * 10) / 10,
+      protein:     Math.round(toNum(form.protein) * servings * 10) / 10,
+      sodium:      Math.round(toNum(form.sodium) * servings),
+      sugar:       Math.round(toNum(form.sugar) * servings * 10) / 10,
     });
   };
 
