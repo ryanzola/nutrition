@@ -101,7 +101,7 @@ export default function DashboardScreen() {
       );
 
       const isFav = isFavorited(entry.name);
-      const favLabel = isFav ? 'Remove from Favorites' : '⭐ Add to Favorites';
+      const favLabel = isFav ? 'Remove from Favorites' : 'Add to Favorites';
       const options = ['Edit', 'Delete', favLabel, ...moveLabels, 'Cancel'];
       const cancelIndex = options.length - 1;
       const destructiveIndex = 1;

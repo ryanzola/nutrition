@@ -1,46 +1,28 @@
 /**
  * hooks/useAuth.ts
  *
- * React hook that initializes Firebase Authentication on mount
- * and tracks the current user's UID, loading state, and
- * whether auth has been initialized.
+ * Returns a hardcoded UID for single-user mode.
+ * This ensures the same Firestore data is shared across all devices
+ * (simulator, physical phone, etc.) without needing a login flow.
+ *
+ * To switch back to anonymous auth, restore the initAuth() listener.
  */
 
-import { useEffect, useState } from 'react';
-
-import { initAuth } from '@/services/auth';
+const HARDCODED_UID = 'HSbYn3pnPpa0KTHbkhiegslQ5eL2';
 
 interface UseAuthResult {
-  /** The current user's UID, or null if signed out */
+  /** The current user's UID */
   uid: string | null;
-  /** True while waiting for the initial auth state to resolve */
+  /** Always false in hardcoded mode */
   loading: boolean;
-  /** True once the auth listener has fired at least once */
+  /** Always true in hardcoded mode */
   initialized: boolean;
 }
 
-/**
- * Subscribes to Firebase Auth state changes.
- *
- * - Calls `initAuth()` on mount, which registers an `onAuthStateChanged`
- *   listener and returns an unsubscribe function.
- * - Sets `initialized` to `true` after the first callback.
- * - Updates `uid` whenever the auth state changes.
- */
 export function useAuth(): UseAuthResult {
-  const [uid, setUid] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
-    const unsubscribe = initAuth((user) => {
-      setUid(user?.uid ?? null);
-      setLoading(false);
-      setInitialized(true);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  return { uid, loading, initialized };
+  return {
+    uid: HARDCODED_UID,
+    loading: false,
+    initialized: true,
+  };
 }
