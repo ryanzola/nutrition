@@ -8,6 +8,7 @@
 
 import React, { useEffect, useState } from 'react';
 import {
+  ActionSheetIOS,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -16,6 +17,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  Alert,
   View,
 } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
@@ -71,6 +73,12 @@ const FIELDS: FieldDef[] = [
   { key: 'sugar',          label: 'Sugar',          placeholder: '0',          suffix: 'g',   numeric: true },
 ];
 
+const SERVING_UNITS = [
+  'g', 'mg', 'oz', 'fl oz', 'ml', 'L',
+  'cup', 'tbsp', 'tsp',
+  'piece', 'slice', 'scoop', 'bar',
+];
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 export default function QuickAddModal({
@@ -124,6 +132,29 @@ export default function QuickAddModal({
 
   const updateField = (key: string, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const showUnitPicker = () => {
+    const options = [...SERVING_UNITS, 'Cancel'];
+    const cancelIndex = options.length - 1;
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        { options, cancelButtonIndex: cancelIndex, title: 'Select Unit' },
+        (idx) => {
+          if (idx !== cancelIndex) {
+            updateField('servingUnit', SERVING_UNITS[idx]);
+          }
+        },
+      );
+    } else {
+      Alert.alert('Select Unit', undefined,
+        SERVING_UNITS.map((u) => ({
+          text: u,
+          onPress: () => updateField('servingUnit', u),
+        })).concat({ text: 'Cancel', onPress: () => {}, style: 'cancel' } as any),
+      );
+    }
   };
 
   return (
@@ -182,10 +213,10 @@ export default function QuickAddModal({
                     <Text style={styles.fieldLabel}>{field.label}</Text>
 
                     {field.key === 'servingAmount' ? (
-                      /* Serving Size: amount + unit side by side */
-                      <View style={styles.servingSizeRow}>
+                      /* Serving Size: numeric input + tappable unit picker */
+                      <View style={styles.inputWrapper}>
                         <TextInput
-                          style={[styles.input, styles.servingAmountInput]}
+                          style={styles.input}
                           value={form.servingAmount ?? ''}
                           onChangeText={(v) => updateField('servingAmount', v)}
                           placeholder="0"
@@ -193,15 +224,14 @@ export default function QuickAddModal({
                           keyboardType="numeric"
                           returnKeyType="next"
                         />
-                        <TextInput
-                          style={[styles.input, styles.servingUnitInput]}
-                          value={form.servingUnit ?? ''}
-                          onChangeText={(v) => updateField('servingUnit', v)}
-                          placeholder="oz, g, cups"
-                          placeholderTextColor={theme.colors.textTertiary}
-                          autoCapitalize="none"
-                          returnKeyType="next"
-                        />
+                        <Pressable onPress={showUnitPicker} hitSlop={8}>
+                          <Text style={[
+                            styles.suffix,
+                            { color: form.servingUnit ? theme.colors.textSecondary : theme.colors.accent },
+                          ]}>
+                            {form.servingUnit || 'unit ▾'}
+                          </Text>
+                        </Pressable>
                       </View>
                     ) : (
                       <View style={styles.inputWrapper}>
@@ -341,21 +371,6 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: theme.colors.border,
     marginLeft: theme.spacing.lg,
-  },
-  servingSizeRow: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  servingAmountInput: {
-    flex: 0,
-    width: 50,
-    textAlign: 'right',
-  },
-  servingUnitInput: {
-    flex: 1,
-    textAlign: 'right',
   },
   computedRow: {
     paddingHorizontal: theme.spacing.lg,
