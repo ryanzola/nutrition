@@ -8,7 +8,7 @@
  * To switch back to anonymous auth, restore the initAuth() listener.
  */
 
-const HARDCODED_UID = 'HSbYn3pnPpa0KTHbkhiegslQ5eL2';
+const HARDCODED_UID = 'CgVmvrTz2PZ2Ku16OjfZhFpVNr92';
 
 interface UseAuthResult {
   /** The current user's UID */
