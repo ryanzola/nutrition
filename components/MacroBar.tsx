@@ -34,24 +34,25 @@ export default function MacroBar({
   color,
   unit = 'g',
 }: MacroBarProps) {
+  const exceeded = goal > 0 && current > goal;
   const ratio = goal > 0 ? Math.min(current / goal, 1) : 0;
-  const percentage = `${(ratio * 100).toFixed(0)}%`;
+  const barColor = exceeded ? theme.colors.danger : color;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, exceeded && { color: theme.colors.danger }]}>{label}</Text>
 
       {/* Track */}
       <View style={styles.track}>
         <View
           style={[
             styles.fill,
-            { width: `${(ratio * 100).toFixed(0)}%` as DimensionValue, backgroundColor: color },
+            { width: `${(ratio * 100).toFixed(0)}%` as DimensionValue, backgroundColor: barColor },
           ]}
         />
       </View>
 
-      <Text style={styles.values}>
+      <Text style={[styles.values, exceeded && { color: theme.colors.danger }]}>
         {current} / {goal} {unit}
       </Text>
     </View>
