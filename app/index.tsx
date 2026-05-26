@@ -295,6 +295,7 @@ export default function DashboardScreen() {
                 goal={settings.sodiumGoal}
                 color={theme.colors.sodium}
                 unit="mg"
+                warningColor={theme.colors.warning}
               />
             </View>
             <View style={styles.microItem}>

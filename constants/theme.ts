@@ -40,6 +40,8 @@ export const theme = {
 
     /** Primary accent (green) */
     accent: '#4ADE80',
+    /** Warning / caution (yellow) */
+    warning: '#FACC15',
     /** Destructive / delete actions */
     danger: '#EF4444',
   },

@@ -23,7 +23,9 @@ interface MacroBarProps {
   color: string;
   /** Unit suffix (defaults to "g"). */
   unit?: string;
-  /** Color when exceeded (defaults to danger red). */
+  /** Color when slightly exceeded (100–150% of goal). */
+  warningColor?: string;
+  /** Color when severely exceeded (>150% of goal, or any exceeded if no warningColor). */
   exceededColor?: string;
 }
 
@@ -35,28 +37,38 @@ export default function MacroBar({
   goal,
   color,
   unit = 'g',
+  warningColor,
   exceededColor,
 }: MacroBarProps) {
   const exceeded = goal > 0 && current > goal;
-  const overColor = exceededColor ?? theme.colors.danger;
   const ratio = goal > 0 ? Math.min(current / goal, 1) : 0;
-  const barColor = exceeded ? overColor : color;
+
+  // Two-tier color: warning (100–150%) → danger (>150%)
+  let activeColor = color;
+  if (exceeded) {
+    const pct = current / goal;
+    if (warningColor && pct <= 1.5) {
+      activeColor = warningColor;
+    } else {
+      activeColor = exceededColor ?? theme.colors.danger;
+    }
+  }
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, exceeded && { color: overColor }]}>{label}</Text>
+      <Text style={[styles.label, exceeded && { color: activeColor }]}>{label}</Text>
 
       {/* Track */}
       <View style={styles.track}>
         <View
           style={[
             styles.fill,
-            { width: `${(ratio * 100).toFixed(0)}%` as DimensionValue, backgroundColor: barColor },
+            { width: `${(ratio * 100).toFixed(0)}%` as DimensionValue, backgroundColor: activeColor },
           ]}
         />
       </View>
 
-      <Text style={[styles.values, exceeded && { color: overColor }]}>
+      <Text style={[styles.values, exceeded && { color: activeColor }]}>
         {current} / {goal} {unit}
       </Text>
     </View>
