@@ -52,7 +52,7 @@ export default function MealScreen() {
     searchQuery,
     favorites,
   );
-  const isSearchActive = searchQuery.trim().length >= 2;
+  const isSearchActive = searchQuery.trim().length >= 2 && activeTab === 'recent';
 
   // Recent entries from today's data across all meals
   const recentEntries = React.useMemo(() => {
