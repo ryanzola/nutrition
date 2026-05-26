@@ -111,6 +111,14 @@ export default function QuickAddModal({
 
   const canSubmit = (form.name ?? '').trim().length > 0;
 
+  // When pre-filled from search/favorites/recents, lock everything except servings
+  const isPreFilled = !!initialValues?.name;
+  const LOCKED_KEYS = new Set(['name', 'servingAmount', 'calories', 'carbs', 'fat', 'protein', 'sodium', 'sugar']);
+  const isLocked = (key: string) => isPreFilled && LOCKED_KEYS.has(key);
+
+  // Current servings multiplier for real-time display
+  const currentServings = Math.max(toNum(form.servings) || 1, 0.01);
+
   const handleAdd = () => {
     if (!canSubmit) return;
     const servings = Math.max(toNum(form.servings) || 1, 0.01);
@@ -215,23 +223,49 @@ export default function QuickAddModal({
                     {field.key === 'servingAmount' ? (
                       /* Serving Size: numeric input + tappable unit picker */
                       <View style={styles.inputWrapper}>
-                        <TextInput
-                          style={styles.input}
-                          value={form.servingAmount ?? ''}
-                          onChangeText={(v) => updateField('servingAmount', v)}
-                          placeholder="0"
-                          placeholderTextColor={theme.colors.textTertiary}
-                          keyboardType="numeric"
-                          returnKeyType="next"
-                        />
-                        <Pressable onPress={showUnitPicker} hitSlop={8}>
-                          <Text style={[
-                            styles.suffix,
-                            { color: form.servingUnit ? theme.colors.textSecondary : theme.colors.accent },
-                          ]}>
-                            {form.servingUnit || 'unit ▾'}
+                        {isPreFilled ? (
+                          <Text style={[styles.input, styles.lockedText]}>
+                            {form.servingAmount || '—'}
                           </Text>
-                        </Pressable>
+                        ) : (
+                          <TextInput
+                            style={styles.input}
+                            value={form.servingAmount ?? ''}
+                            onChangeText={(v) => updateField('servingAmount', v)}
+                            placeholder="0"
+                            placeholderTextColor={theme.colors.textTertiary}
+                            keyboardType="numeric"
+                            returnKeyType="next"
+                          />
+                        )}
+                        {isPreFilled ? (
+                          <Text style={styles.suffix}>
+                            {form.servingUnit || ''}
+                          </Text>
+                        ) : (
+                          <Pressable onPress={showUnitPicker} hitSlop={8}>
+                            <Text style={[
+                              styles.suffix,
+                              { color: form.servingUnit ? theme.colors.textSecondary : theme.colors.accent },
+                            ]}>
+                              {form.servingUnit || 'unit ▾'}
+                            </Text>
+                          </Pressable>
+                        )}
+                      </View>
+                    ) : isLocked(field.key) ? (
+                      /* Locked field — display scaled value */
+                      <View style={styles.inputWrapper}>
+                        <Text style={[styles.input, styles.lockedText]}>
+                          {field.key === 'name'
+                            ? form[field.key]
+                            : field.numeric
+                              ? Math.round(toNum(form[field.key]) * currentServings * 10) / 10
+                              : form[field.key]}
+                        </Text>
+                        {field.suffix !== '' && (
+                          <Text style={styles.suffix}>{field.suffix}</Text>
+                        )}
                       </View>
                     ) : (
                       <View style={styles.inputWrapper}>
@@ -380,5 +414,8 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.accent,
     textAlign: 'right',
+  },
+  lockedText: {
+    color: theme.colors.textSecondary,
   },
 });
