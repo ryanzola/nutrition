@@ -133,3 +133,25 @@ export interface FavoriteFood {
   /** Unix-ms timestamp of when this was favorited. */
   createdAt: number;
 }
+
+// ── Search results ──────────────────────────────────────────────────────────
+
+/** Source of a food search result. */
+export type SearchResultSource = 'local' | 'usda' | 'openfoodfacts';
+
+/** A food search result from any source (local, USDA, Open Food Facts). */
+export interface SearchResult {
+  name: string;
+  brand?: string;
+  servingAmount?: number;
+  servingUnit?: string;
+  calories: number;
+  carbs: number;
+  fat: number;
+  protein: number;
+  sodium: number;
+  sugar: number;
+  source: SearchResultSource;
+  /** External API ID for reference. */
+  apiId?: string;
+}

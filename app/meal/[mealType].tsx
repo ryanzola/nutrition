@@ -14,6 +14,7 @@ import {
   Pressable,
   StyleSheet,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -23,8 +24,9 @@ import { useApp } from '@/context/AppContext';
 import { useDay } from '@/hooks/useDay';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useSearch } from '@/hooks/useSearch';
 import { theme } from '@/constants/theme';
-import type { MealType, FoodEntry, FavoriteFood, Recipe } from '@/types';
+import type { MealType, FoodEntry, FavoriteFood, Recipe, SearchResult } from '@/types';
 
 import QuickAddModal from '@/components/QuickAddModal';
 
@@ -40,8 +42,17 @@ export default function MealScreen() {
 
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [selectedFavorite, setSelectedFavorite] = useState<FavoriteFood | null>(null);
+  const [selectedSearchResult, setSelectedSearchResult] = useState<SearchResult | null>(null);
   const [activeTab, setActiveTab] = useState<'recent' | 'favorites' | 'recipes'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Debounced API + local search
+  const { sections, isLoading: isSearching, hasResults } = useSearch(
+    uid,
+    searchQuery,
+    favorites,
+  );
+  const isSearchActive = searchQuery.trim().length >= 2;
 
   // Recent entries from today's data across all meals
   const recentEntries = React.useMemo(() => {
@@ -103,6 +114,16 @@ export default function MealScreen() {
     (favorite: FavoriteFood) => {
       // Open QuickAddModal pre-filled so user can adjust servings
       setSelectedFavorite(favorite);
+      setSelectedSearchResult(null);
+      setQuickAddVisible(true);
+    },
+    [],
+  );
+
+  const handleAddSearchResult = useCallback(
+    (result: SearchResult) => {
+      setSelectedSearchResult(result);
+      setSelectedFavorite(null);
       setQuickAddVisible(true);
     },
     [],
@@ -216,7 +237,56 @@ export default function MealScreen() {
         contentContainerStyle={styles.contentInner}
         showsVerticalScrollIndicator={false}
       >
-        {activeTab === 'recent' ? (
+        {isSearchActive ? (
+          /* ── Search Results ─────────────────────────────────── */
+          isSearching ? (
+            <View style={styles.emptyState}>
+              <ActivityIndicator size="large" color={theme.colors.accent} />
+              <Text style={styles.emptySubtext}>Searching...</Text>
+            </View>
+          ) : !hasResults ? (
+            <View style={styles.emptyState}>
+              <Ionicons
+                name="search-outline"
+                size={48}
+                color={theme.colors.textTertiary}
+              />
+              <Text style={styles.emptyText}>No results found</Text>
+              <Text style={styles.emptySubtext}>
+                Try a different search term or add it manually
+              </Text>
+            </View>
+          ) : (
+            sections.map((section) => (
+              <View key={section.title}>
+                <Text style={styles.sectionHeader}>{section.title}</Text>
+                {section.data.map((result, idx) => (
+                  <Pressable
+                    key={`${result.source}-${result.name}-${idx}`}
+                    style={styles.foodRow}
+                    onPress={() => handleAddSearchResult(result)}
+                  >
+                    <View style={styles.foodRowLeft}>
+                      <Text style={styles.foodName} numberOfLines={1}>
+                        {result.name}
+                      </Text>
+                      <Text style={styles.foodMeta}>
+                        {result.calories} Cal · {result.protein}g P · {result.carbs}g C ·{' '}
+                        {result.fat}g F
+                        {result.brand ? ` · ${result.brand}` : ''}
+                      </Text>
+                    </View>
+                    <Ionicons
+                      name="add-circle-outline"
+                      size={24}
+                      color={theme.colors.accent}
+                    />
+                  </Pressable>
+                ))}
+              </View>
+            ))
+          )
+        ) : activeTab === 'recent' ? (
           filteredRecent.length === 0 ? (
             <View style={styles.emptyState}>
               <Ionicons
@@ -305,7 +375,7 @@ export default function MealScreen() {
             </Pressable>
           </View>
         ) : (
-          recipes.map((recipe) => (
+          filteredRecipes.map((recipe) => (
             <Pressable
               key={recipe.id}
               style={styles.foodRow}
@@ -334,21 +404,44 @@ export default function MealScreen() {
         onClose={() => {
           setQuickAddVisible(false);
           setSelectedFavorite(null);
+          setSelectedSearchResult(null);
         }}
         onAdd={handleQuickAdd}
-        initialValues={selectedFavorite ?? undefined}
-        isFavorited={selectedFavorite ? isFavorited(selectedFavorite.name) : false}
-        onToggleFavorite={selectedFavorite ? () => toggleFavorite({
-          name: selectedFavorite.name,
-          servingAmount: selectedFavorite.servingAmount,
-          servingUnit: selectedFavorite.servingUnit,
-          calories: selectedFavorite.calories,
-          carbs: selectedFavorite.carbs,
-          fat: selectedFavorite.fat,
-          protein: selectedFavorite.protein,
-          sodium: selectedFavorite.sodium,
-          sugar: selectedFavorite.sugar,
-        }) : undefined}
+        initialValues={selectedFavorite ?? selectedSearchResult ?? undefined}
+        isFavorited={
+          selectedFavorite
+            ? isFavorited(selectedFavorite.name)
+            : selectedSearchResult
+              ? isFavorited(selectedSearchResult.name)
+              : false
+        }
+        onToggleFavorite={
+          selectedFavorite
+            ? () => toggleFavorite({
+                name: selectedFavorite.name,
+                servingAmount: selectedFavorite.servingAmount,
+                servingUnit: selectedFavorite.servingUnit,
+                calories: selectedFavorite.calories,
+                carbs: selectedFavorite.carbs,
+                fat: selectedFavorite.fat,
+                protein: selectedFavorite.protein,
+                sodium: selectedFavorite.sodium,
+                sugar: selectedFavorite.sugar,
+              })
+            : selectedSearchResult
+              ? () => toggleFavorite({
+                  name: selectedSearchResult.name,
+                  servingAmount: selectedSearchResult.servingAmount,
+                  servingUnit: selectedSearchResult.servingUnit,
+                  calories: selectedSearchResult.calories,
+                  carbs: selectedSearchResult.carbs,
+                  fat: selectedSearchResult.fat,
+                  protein: selectedSearchResult.protein,
+                  sodium: selectedSearchResult.sodium,
+                  sugar: selectedSearchResult.sugar,
+                })
+              : undefined
+        }
       />
     </SafeAreaView>
   );
@@ -507,5 +600,14 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
     marginTop: 2,
+  },
+  sectionHeader: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textTertiary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.sm,
   },
 });

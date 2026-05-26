@@ -406,3 +406,39 @@ export async function removeFavorite(uid: string, favoriteId: string): Promise<v
   const ref = doc(db, 'users', uid, 'favorites', favoriteId);
   await deleteDoc(ref);
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Recent entries
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Fetches all food entries from the last N days.
+ */
+export async function getRecentEntries(
+  uid: string,
+  days: number = 7,
+): Promise<FoodEntry[]> {
+  const today = new Date();
+  const entries: FoodEntry[] = [];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayDoc = await getDayDocument(uid, dateStr);
+
+    for (const meal of Object.values(dayDoc.meals)) {
+      for (const entry of meal.entries) {
+        // Deduplicate by name (case-insensitive)
+        const key = entry.name.toLowerCase();
+        if (!seen.has(key)) {
+          seen.add(key);
+          entries.push(entry);
+        }
+      }
+    }
+  }
+
+  return entries.sort((a, b) => b.createdAt - a.createdAt);
+}
