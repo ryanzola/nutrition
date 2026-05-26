@@ -8,6 +8,34 @@
 import type { SearchResult } from '@/types';
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Map USDA internal unit codes to human-readable labels. */
+const UNIT_MAP: Record<string, string> = {
+  GRM: 'g',
+  G: 'g',
+  MLT: 'ml',
+  ML: 'ml',
+  OZ: 'oz',
+  LB: 'lb',
+  IU: 'IU',
+};
+
+function normalizeUnit(raw?: string): string {
+  if (!raw) return 'g';
+  const upper = raw.trim().toUpperCase();
+  return UNIT_MAP[upper] ?? raw.toLowerCase();
+}
+
+/** Convert "CHEERIOS CEREAL" → "Cheerios Cereal". */
+function titleCase(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // USDA FoodData Central
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -41,8 +69,10 @@ export async function searchUSDA(query: string): Promise<SearchResult[]> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         query,
-        dataType: ['Branded', 'SR Legacy'],
-        pageSize: 15,
+        // Only Branded — has actual label serving sizes.
+        // SR Legacy is per-100g survey data with verbose names.
+        dataType: ['Branded'],
+        pageSize: 25,
         nutrients: [1008, 1003, 1005, 1004, 1093, 2000],
       }),
     });
@@ -52,17 +82,26 @@ export async function searchUSDA(query: string): Promise<SearchResult[]> {
     const data = await res.json();
     const foods: any[] = data.foods ?? [];
 
-    return foods.map((food): SearchResult => {
-      const nutrients = food.foodNutrients ?? [];
-      const isBranded = food.dataType === 'Branded';
-      const servingSize: number | undefined = food.servingSize;
-      const scale = isBranded && servingSize ? servingSize / 100 : 1;
+    // Deduplicate by name + brand (keep first = best match)
+    const seen = new Set<string>();
+    const results: SearchResult[] = [];
 
-      return {
-        name: food.description ?? '',
-        brand: food.brandName ?? food.brandOwner ?? undefined,
-        servingAmount: isBranded && servingSize ? servingSize : 100,
-        servingUnit: food.servingSizeUnit ?? 'g',
+    for (const food of foods) {
+      const name = titleCase(food.description ?? '');
+      const brand = food.brandName ?? food.brandOwner ?? '';
+      const key = `${name.toLowerCase()}|${brand.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const nutrients = food.foodNutrients ?? [];
+      const servingSize: number | undefined = food.servingSize;
+      const scale = servingSize ? servingSize / 100 : 1;
+
+      results.push({
+        name,
+        brand: brand || undefined,
+        servingAmount: servingSize ?? 100,
+        servingUnit: normalizeUnit(food.servingSizeUnit),
         calories: Math.round(usdaNutrient(nutrients, NUTRIENT_IDS.calories) * scale),
         carbs: Math.round(usdaNutrient(nutrients, NUTRIENT_IDS.carbs) * scale * 10) / 10,
         fat: Math.round(usdaNutrient(nutrients, NUTRIENT_IDS.fat) * scale * 10) / 10,
@@ -71,8 +110,12 @@ export async function searchUSDA(query: string): Promise<SearchResult[]> {
         sugar: Math.round(usdaNutrient(nutrients, NUTRIENT_IDS.sugar) * scale * 10) / 10,
         source: 'usda',
         apiId: String(food.fdcId),
-      };
-    });
+      });
+
+      if (results.length >= 10) break;
+    }
+
+    return results;
   } catch {
     return [];
   }
@@ -94,7 +137,7 @@ export async function searchOpenFoodFacts(query: string): Promise<SearchResult[]
     const params = new URLSearchParams({
       search_terms: query,
       fields: 'product_name,brands,nutriments,serving_size,serving_quantity,code',
-      page_size: '15',
+      page_size: '25',
       json: '1',
     });
 
@@ -107,27 +150,49 @@ export async function searchOpenFoodFacts(query: string): Promise<SearchResult[]
     const data = await res.json();
     const products: any[] = data.products ?? [];
 
-    return products
-      .filter((p: any) => p.product_name)
-      .map((product): SearchResult => {
-        const n = product.nutriments ?? {};
-        const sodiumG = offNutrient(n, 'sodium');
+    const seen = new Set<string>();
+    const results: SearchResult[] = [];
 
-        return {
-          name: product.product_name,
-          brand: product.brands || undefined,
-          servingAmount: product.serving_quantity ?? undefined,
-          servingUnit: product.serving_size ?? undefined,
-          calories: Math.round(offNutrient(n, 'energy-kcal')),
-          carbs: Math.round(offNutrient(n, 'carbohydrates') * 10) / 10,
-          fat: Math.round(offNutrient(n, 'fat') * 10) / 10,
-          protein: Math.round(offNutrient(n, 'proteins') * 10) / 10,
-          sodium: Math.round(sodiumG * 1000),
-          sugar: Math.round(offNutrient(n, 'sugars') * 10) / 10,
-          source: 'openfoodfacts',
-          apiId: product.code ?? undefined,
-        };
+    for (const product of products) {
+      if (!product.product_name) continue;
+
+      const name = product.product_name;
+      const brand = product.brands ?? '';
+      const key = `${name.toLowerCase()}|${brand.toLowerCase()}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const n = product.nutriments ?? {};
+      const sodiumG = offNutrient(n, 'sodium');
+
+      // Parse serving_size string (e.g. "39g", "1 cup (240ml)", "30 g")
+      const servingText: string = product.serving_size ?? '';
+      const servingMatch = servingText.match(/^([\d.]+)\s*(\w+)/);
+      const servingAmount = product.serving_quantity
+        ?? (servingMatch ? parseFloat(servingMatch[1]) : undefined);
+      const servingUnit = servingMatch
+        ? normalizeUnit(servingMatch[2])
+        : undefined;
+
+      results.push({
+        name,
+        brand: brand || undefined,
+        servingAmount,
+        servingUnit,
+        calories: Math.round(offNutrient(n, 'energy-kcal')),
+        carbs: Math.round(offNutrient(n, 'carbohydrates') * 10) / 10,
+        fat: Math.round(offNutrient(n, 'fat') * 10) / 10,
+        protein: Math.round(offNutrient(n, 'proteins') * 10) / 10,
+        sodium: Math.round(sodiumG * 1000),
+        sugar: Math.round(offNutrient(n, 'sugars') * 10) / 10,
+        source: 'openfoodfacts',
+        apiId: product.code ?? undefined,
       });
+
+      if (results.length >= 10) break;
+    }
+
+    return results;
   } catch {
     return [];
   }
