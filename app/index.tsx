@@ -305,6 +305,8 @@ export default function DashboardScreen() {
                 goal={settings.sugarGoal}
                 color={theme.colors.sugar}
                 unit="g"
+                warningColor={theme.colors.warning}
+                warningThreshold={1.25}
               />
             </View>
           </View>

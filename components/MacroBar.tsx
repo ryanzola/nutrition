@@ -23,9 +23,11 @@ interface MacroBarProps {
   color: string;
   /** Unit suffix (defaults to "g"). */
   unit?: string;
-  /** Color when slightly exceeded (100–150% of goal). */
+  /** Color when slightly exceeded, up to warningThreshold. */
   warningColor?: string;
-  /** Color when severely exceeded (>150% of goal, or any exceeded if no warningColor). */
+  /** Ratio at which warning transitions to danger (defaults to 1.5 = 150%). */
+  warningThreshold?: number;
+  /** Color when severely exceeded (>warningThreshold, or any exceeded if no warningColor). */
   exceededColor?: string;
 }
 
@@ -38,16 +40,17 @@ export default function MacroBar({
   color,
   unit = 'g',
   warningColor,
+  warningThreshold = 1.5,
   exceededColor,
 }: MacroBarProps) {
   const exceeded = goal > 0 && current > goal;
   const ratio = goal > 0 ? Math.min(current / goal, 1) : 0;
 
-  // Two-tier color: warning (100–150%) → danger (>150%)
+  // Two-tier color: warning (100%–threshold) → danger (>threshold)
   let activeColor = color;
   if (exceeded) {
     const pct = current / goal;
-    if (warningColor && pct <= 1.5) {
+    if (warningColor && pct <= warningThreshold) {
       activeColor = warningColor;
     } else {
       activeColor = exceededColor ?? theme.colors.danger;
