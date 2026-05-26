@@ -115,7 +115,7 @@ export async function searchUSDA(query: string): Promise<SearchResult[]> {
       if (results.length >= 10) break;
     }
 
-    return results;
+    return results.sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [];
   }
@@ -192,7 +192,7 @@ export async function searchOpenFoodFacts(query: string): Promise<SearchResult[]
       if (results.length >= 10) break;
     }
 
-    return results;
+    return results.sort((a, b) => a.name.localeCompare(b.name));
   } catch {
     return [];
   }
