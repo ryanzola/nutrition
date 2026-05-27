@@ -213,7 +213,7 @@ export default function DashboardScreen() {
                 </Text>
               </Pressable>
               <Pressable onPress={() => setSelectedDate(getDateString())} hitSlop={8}>
-                <Text style={styles.todayLink}>↩ Today</Text>
+                <Text style={styles.todayLink}>↻ Today</Text>
               </Pressable>
             </>
           )}
