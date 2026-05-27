@@ -211,12 +211,13 @@ export default function DashboardScreen() {
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Calorie Tracker</Text>
-          <Pressable onPress={() => setCalendarVisible(true)}>
-            <Text style={styles.headerSubtitle}>
-              {isToday ? '↻ ' : ''}
-              {formattedDate}
-            </Text>
-          </Pressable>
+          {!isToday && (
+            <Pressable onPress={() => setCalendarVisible(true)}>
+              <Text style={styles.headerSubtitle}>
+                {formattedDate}
+              </Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.headerRight}>
