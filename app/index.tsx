@@ -201,22 +201,21 @@ export default function DashboardScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          {!isToday && (
-            <Pressable onPress={() => setSelectedDate(getDateString())} hitSlop={12}>
-              <Ionicons name="today-outline" size={22} color={theme.colors.accent} />
-            </Pressable>
-          )}
-        </View>
+        <View style={styles.headerLeft} />
 
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Calorie Tracker</Text>
           {!isToday && (
-            <Pressable onPress={() => setCalendarVisible(true)}>
-              <Text style={styles.headerSubtitle}>
-                {formattedDate}
-              </Text>
-            </Pressable>
+            <>
+              <Pressable onPress={() => setCalendarVisible(true)}>
+                <Text style={styles.headerSubtitle}>
+                  {formattedDate}
+                </Text>
+              </Pressable>
+              <Pressable onPress={() => setSelectedDate(getDateString())} hitSlop={8}>
+                <Text style={styles.todayLink}>↩ Today</Text>
+              </Pressable>
+            </>
           )}
         </View>
 
@@ -397,6 +396,12 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     fontSize: theme.fontSize.sm,
+    color: theme.colors.accent,
+    marginTop: 2,
+  },
+  todayLink: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.semibold,
     color: theme.colors.accent,
     marginTop: 2,
   },
