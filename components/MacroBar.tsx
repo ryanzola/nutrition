@@ -72,7 +72,7 @@ export default function MacroBar({
       </View>
 
       <Text style={[styles.values, exceeded && { color: activeColor }]}>
-        {current} / {goal} {unit}
+        {parseFloat(current.toFixed(1))} / {parseFloat(goal.toFixed(1))} {unit}
       </Text>
     </View>
   );
