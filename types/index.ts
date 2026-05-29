@@ -126,6 +126,8 @@ export interface FavoriteFood {
   servingAmount?: number;
   /** Unit of measure for one serving (e.g. "oz", "cups", "g"). */
   servingUnit?: string;
+  /** Number of servings (optional, for pre-fill context). */
+  servings?: number;
   calories: number;
   carbs: number;
   fat: number;

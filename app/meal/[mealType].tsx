@@ -94,20 +94,26 @@ export default function MealScreen() {
   );
 
   const handleReAddEntry = useCallback(
-    async (entry: FoodEntry) => {
-      await addEntry(mealType, {
+    (entry: FoodEntry) => {
+      // Open QuickAddModal pre-filled so user can adjust servings
+      setSelectedFavorite({
+        id: entry.id,
         name: entry.name,
+        servingAmount: entry.servingAmount,
+        servingUnit: entry.servingUnit,
+        servings: entry.servings,
         calories: entry.calories,
         carbs: entry.carbs,
         fat: entry.fat,
         protein: entry.protein,
         sodium: entry.sodium,
         sugar: entry.sugar,
-        recipeId: entry.recipeId,
+        createdAt: entry.createdAt,
       });
-      router.back();
+      setSelectedSearchResult(null);
+      setQuickAddVisible(true);
     },
-    [addEntry, mealType],
+    [],
   );
 
   const handleAddFavoriteToMeal = useCallback(
