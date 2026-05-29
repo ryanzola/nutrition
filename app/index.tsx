@@ -15,8 +15,8 @@ import {
   ActionSheetIOS,
   Platform,
   Alert,
+  Share,
 } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -228,8 +228,7 @@ export default function DashboardScreen() {
     text += `  Sodium: ${Math.round(totals.sodium)}mg / ${settings.sodiumGoal}mg\n`;
     text += `  Sugar: ${round1(totals.sugar)}g / ${settings.sugarGoal}g\n`;
 
-    await Clipboard.setStringAsync(text);
-    Alert.alert('Copied', 'Day summary copied to clipboard.');
+    await Share.share({ message: text });
   }, [dayData, totals, settings, selectedDate, isToday, formattedDate]);
 
   // ── Render ─────────────────────────────────────────────────────────────
