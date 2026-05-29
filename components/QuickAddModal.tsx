@@ -94,22 +94,17 @@ export default function QuickAddModal({
   // Reset / pre-fill form when visibility or initialValues change
   useEffect(() => {
     if (visible) {
-      // When re-opening a saved entry, derive base (per-serving) macros
-      const s = initialValues?.servings ?? 1;
-      const divBy = (val: number | undefined) =>
-        val != null ? String(Math.round((val / s) * 10) / 10) : '';
-
       setForm({
         name:          initialValues?.name ?? '',
         servingAmount: initialValues?.servingAmount != null ? String(initialValues.servingAmount) : '',
         servingUnit:   initialValues?.servingUnit ?? '',
-        servings:      String(s),
-        calories:      divBy(initialValues?.calories),
-        carbs:         divBy(initialValues?.carbs),
-        fat:           divBy(initialValues?.fat),
-        protein:       divBy(initialValues?.protein),
-        sodium:        divBy(initialValues?.sodium),
-        sugar:         divBy(initialValues?.sugar),
+        servings:      String(initialValues?.servings ?? 1),
+        calories:      initialValues?.calories != null ? String(initialValues.calories) : '',
+        carbs:         initialValues?.carbs != null ? String(initialValues.carbs) : '',
+        fat:           initialValues?.fat != null ? String(initialValues.fat) : '',
+        protein:       initialValues?.protein != null ? String(initialValues.protein) : '',
+        sodium:        initialValues?.sodium != null ? String(initialValues.sodium) : '',
+        sugar:         initialValues?.sugar != null ? String(initialValues.sugar) : '',
       });
     }
   }, [visible, initialValues]);
@@ -134,12 +129,12 @@ export default function QuickAddModal({
       servingAmount: servingAmt > 0 ? servingAmt : undefined,
       servingUnit:   servingAmt > 0 ? servingUnit : undefined,
       servings,
-      calories:      Math.round(toNum(form.calories) * servings),
-      carbs:         Math.round(toNum(form.carbs) * servings * 10) / 10,
-      fat:           Math.round(toNum(form.fat) * servings * 10) / 10,
-      protein:       Math.round(toNum(form.protein) * servings * 10) / 10,
-      sodium:        Math.round(toNum(form.sodium) * servings),
-      sugar:         Math.round(toNum(form.sugar) * servings * 10) / 10,
+      calories:      toNum(form.calories),
+      carbs:         toNum(form.carbs),
+      fat:           toNum(form.fat),
+      protein:       toNum(form.protein),
+      sodium:        toNum(form.sodium),
+      sugar:         toNum(form.sugar),
     });
   };
 

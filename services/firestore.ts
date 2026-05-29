@@ -81,12 +81,13 @@ export function recalculateTotals(dayDoc: DayDocument): NutritionTotals {
 
   for (const meal of mealTypes) {
     for (const entry of dayDoc.meals[meal].entries) {
-      totals.calories += entry.calories;
-      totals.carbs += entry.carbs;
-      totals.fat += entry.fat;
-      totals.protein += entry.protein;
-      totals.sodium += entry.sodium;
-      totals.sugar += entry.sugar;
+      const s = entry.servings ?? 1;
+      totals.calories += entry.calories * s;
+      totals.carbs += entry.carbs * s;
+      totals.fat += entry.fat * s;
+      totals.protein += entry.protein * s;
+      totals.sodium += entry.sodium * s;
+      totals.sugar += entry.sugar * s;
     }
   }
 

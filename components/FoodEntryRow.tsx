@@ -44,7 +44,7 @@ export default function FoodEntryRow({
       </Text>
 
       <View style={styles.right}>
-        <Text style={styles.calories}>{entry.calories} Cal</Text>
+        <Text style={styles.calories}>{Math.round(entry.calories * (entry.servings ?? 1))} Cal</Text>
         <Ionicons
           name="chevron-forward"
           size={16}
