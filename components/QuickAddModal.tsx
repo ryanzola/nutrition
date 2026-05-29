@@ -94,17 +94,22 @@ export default function QuickAddModal({
   // Reset / pre-fill form when visibility or initialValues change
   useEffect(() => {
     if (visible) {
+      // When re-opening a saved entry, derive base (per-serving) macros
+      const s = initialValues?.servings ?? 1;
+      const divBy = (val: number | undefined) =>
+        val != null ? String(Math.round((val / s) * 10) / 10) : '';
+
       setForm({
         name:          initialValues?.name ?? '',
         servingAmount: initialValues?.servingAmount != null ? String(initialValues.servingAmount) : '',
         servingUnit:   initialValues?.servingUnit ?? '',
-        servings:      '1',
-        calories:      initialValues?.calories != null ? String(initialValues.calories) : '',
-        carbs:         initialValues?.carbs != null ? String(initialValues.carbs) : '',
-        fat:           initialValues?.fat != null ? String(initialValues.fat) : '',
-        protein:       initialValues?.protein != null ? String(initialValues.protein) : '',
-        sodium:        initialValues?.sodium != null ? String(initialValues.sodium) : '',
-        sugar:         initialValues?.sugar != null ? String(initialValues.sugar) : '',
+        servings:      String(s),
+        calories:      divBy(initialValues?.calories),
+        carbs:         divBy(initialValues?.carbs),
+        fat:           divBy(initialValues?.fat),
+        protein:       divBy(initialValues?.protein),
+        sodium:        divBy(initialValues?.sodium),
+        sugar:         divBy(initialValues?.sugar),
       });
     }
   }, [visible, initialValues]);
@@ -123,14 +128,12 @@ export default function QuickAddModal({
     if (!canSubmit) return;
     const servings = Math.max(toNum(form.servings) || 1, 0.01);
     const servingAmt = toNum(form.servingAmount);
-    const scaledServingAmt = servingAmt > 0
-      ? Math.round(servingAmt * servings * 10) / 10
-      : undefined;
     const servingUnit = form.servingUnit?.trim() || undefined;
     onAdd({
       name:          form.name.trim(),
-      servingAmount: scaledServingAmt,
-      servingUnit:   scaledServingAmt ? servingUnit : undefined,
+      servingAmount: servingAmt > 0 ? servingAmt : undefined,
+      servingUnit:   servingAmt > 0 ? servingUnit : undefined,
+      servings,
       calories:      Math.round(toNum(form.calories) * servings),
       carbs:         Math.round(toNum(form.carbs) * servings * 10) / 10,
       fat:           Math.round(toNum(form.fat) * servings * 10) / 10,

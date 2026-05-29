@@ -20,6 +20,8 @@ export interface FoodEntry {
   servingAmount?: number;
   /** Unit of measure for one serving (e.g. "oz", "cups", "g"). */
   servingUnit?: string;
+  /** Number of servings consumed (defaults to 1). */
+  servings?: number;
   calories: number;
   carbs: number;
   fat: number;
