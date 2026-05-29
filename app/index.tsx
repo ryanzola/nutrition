@@ -228,6 +228,18 @@ export default function DashboardScreen() {
     text += `  Sodium: ${Math.round(totals.sodium)}mg / ${settings.sodiumGoal}mg\n`;
     text += `  Sugar: ${round1(totals.sugar)}g / ${settings.sugarGoal}g\n`;
 
+    // Macro calorie composition
+    const proteinCal = totals.protein * 4;
+    const carbsCal = totals.carbs * 4;
+    const fatCal = totals.fat * 9;
+    const totalMacroCal = proteinCal + carbsCal + fatCal;
+    const pct = (v: number) => totalMacroCal > 0 ? Math.round((v / totalMacroCal) * 100) : 0;
+
+    text += `\nMacro Calories:\n`;
+    text += `  Protein: ${Math.round(proteinCal)} cal (${pct(proteinCal)}%)\n`;
+    text += `  Carbs: ${Math.round(carbsCal)} cal (${pct(carbsCal)}%)\n`;
+    text += `  Fat: ${Math.round(fatCal)} cal (${pct(fatCal)}%)\n`;
+
     await Share.share({ message: text });
   }, [dayData, totals, settings, selectedDate, isToday, formattedDate]);
 
