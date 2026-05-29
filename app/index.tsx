@@ -16,6 +16,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +25,7 @@ import { useApp, getDateString } from '@/context/AppContext';
 import { useDay } from '@/hooks/useDay';
 import { useFavorites } from '@/hooks/useFavorites';
 import { theme } from '@/constants/theme';
-import { MEAL_TYPES } from '@/constants/defaults';
+import { MEAL_TYPES, MEAL_LABELS } from '@/constants/defaults';
 import type { MealType, FoodEntry } from '@/types';
 
 import CalorieRing from '@/components/CalorieRing';
@@ -196,6 +197,41 @@ export default function DashboardScreen() {
     setEditEntry(null);
   }, []);
 
+  const handleCopyDay = useCallback(async () => {
+    const round1 = (n: number) => parseFloat(n.toFixed(1));
+    const dateLabel = isToday ? `Today (${selectedDate})` : formattedDate + ` (${selectedDate})`;
+
+    let text = `${dateLabel}\n\n`;
+
+    // Per-meal breakdown
+    for (const mt of MEAL_TYPES) {
+      const entries = dayData?.meals[mt]?.entries ?? [];
+      if (entries.length === 0) continue;
+
+      const mealCals = entries.reduce((s, e) => s + e.calories * (e.servings ?? 1), 0);
+      text += `${MEAL_LABELS[mt]} (${Math.round(mealCals)} Cal)\n`;
+
+      for (const e of entries) {
+        const s = e.servings ?? 1;
+        const servingsLabel = s !== 1 ? ` (x${s})` : '';
+        text += `  ${e.name}${servingsLabel} -- ${Math.round(e.calories * s)} Cal | ${round1(e.carbs * s)}g C | ${round1(e.fat * s)}g F | ${round1(e.protein * s)}g P\n`;
+      }
+      text += '\n';
+    }
+
+    // Daily totals with targets
+    text += `Daily Totals:\n`;
+    text += `  Calories: ${Math.round(totals.calories)} / ${settings.calorieGoal}\n`;
+    text += `  Carbs: ${round1(totals.carbs)}g / ${settings.carbsGoal}g\n`;
+    text += `  Fat: ${round1(totals.fat)}g / ${settings.fatGoal}g\n`;
+    text += `  Protein: ${round1(totals.protein)}g / ${settings.proteinGoal}g\n`;
+    text += `  Sodium: ${Math.round(totals.sodium)}mg / ${settings.sodiumGoal}mg\n`;
+    text += `  Sugar: ${round1(totals.sugar)}g / ${settings.sugarGoal}g\n`;
+
+    await Clipboard.setStringAsync(text);
+    Alert.alert('Copied', 'Day summary copied to clipboard.');
+  }, [dayData, totals, settings, selectedDate, isToday, formattedDate]);
+
   // ── Render ─────────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -248,6 +284,19 @@ export default function DashboardScreen() {
       >
         {/* ── Calorie ring + macros card ─────────────────────────────── */}
         <View style={styles.card}>
+          {/* Copy day button */}
+          <Pressable
+            onPress={handleCopyDay}
+            hitSlop={10}
+            style={styles.copyButton}
+          >
+            <Ionicons
+              name="copy-outline"
+              size={18}
+              color={theme.colors.textSecondary}
+            />
+          </Pressable>
+
           <CalorieRing
             consumed={totals.calories}
             goal={settings.calorieGoal}
@@ -422,6 +471,14 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.md,
     padding: theme.spacing.xl,
     marginBottom: theme.spacing.lg,
+    position: 'relative',
+  },
+  copyButton: {
+    position: 'absolute',
+    top: theme.spacing.md,
+    right: theme.spacing.md,
+    zIndex: 1,
+    padding: theme.spacing.xs,
   },
   macroRow: {
     flexDirection: 'row',
