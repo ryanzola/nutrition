@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   // Full-width Add button
   addButtonContainer: {
     paddingHorizontal: theme.spacing.lg,
-    paddingBottom: 34,
+    paddingBottom: theme.spacing.xl,
     paddingTop: theme.spacing.md,
     backgroundColor: theme.colors.background,
   },
