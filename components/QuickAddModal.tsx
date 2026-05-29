@@ -1,9 +1,10 @@
 /**
- * QuickAddModal — full-screen modal for quick-adding (or editing) a food entry.
+ * QuickAddModal — full-screen modal for adding food entries.
  *
- * Presents a form with name + numeric macro fields, validates that name is
- * non-empty, and returns a partial FoodEntry (without id/createdAt) via
- * the `onAdd` callback.
+ * Two modes:
+ * - "Create Food" (no initialValues): full editable form for entering new food from a label.
+ * - "Add Food" (initialValues provided): simplified card showing food info with
+ *   an Amount input and full-width Add button.
  */
 
 import React, { useEffect, useState } from 'react';
@@ -51,7 +52,7 @@ function toNum(value: string): number {
   return Number.isNaN(n) || n < 0 ? 0 : n;
 }
 
-// ── Field config ───────────────────────────────────────────────────────────
+// ── Field config (Create mode) ─────────────────────────────────────────────
 
 interface FieldDef {
   key: string;
@@ -91,6 +92,8 @@ export default function QuickAddModal({
 }: QuickAddModalProps) {
   const [form, setForm] = useState<Record<string, string>>({});
 
+  const isPreFilled = !!initialValues?.name;
+
   // Reset / pre-fill form when visibility or initialValues change
   useEffect(() => {
     if (visible) {
@@ -98,7 +101,7 @@ export default function QuickAddModal({
         name:          initialValues?.name ?? '',
         servingAmount: initialValues?.servingAmount != null ? String(initialValues.servingAmount) : '',
         servingUnit:   initialValues?.servingUnit ?? '',
-        servings:      String(initialValues?.servings ?? 1),
+        servings:      '1',
         calories:      initialValues?.calories != null ? String(initialValues.calories) : '',
         carbs:         initialValues?.carbs != null ? String(initialValues.carbs) : '',
         fat:           initialValues?.fat != null ? String(initialValues.fat) : '',
@@ -111,13 +114,8 @@ export default function QuickAddModal({
 
   const canSubmit = (form.name ?? '').trim().length > 0;
 
-  // When pre-filled from search/favorites/recents, lock everything except servings
-  const isPreFilled = !!initialValues?.name;
-  const LOCKED_KEYS = new Set(['name', 'servingAmount', 'calories', 'carbs', 'fat', 'protein', 'sodium', 'sugar']);
-  const isLocked = (key: string) => isPreFilled && LOCKED_KEYS.has(key);
-
-  // Current servings multiplier for real-time display
-  const currentServings = Math.max(toNum(form.servings) || 1, 0.01);
+  // Current amount multiplier for real-time display
+  const currentAmount = Math.max(toNum(form.servings) || 1, 0.01);
 
   const handleAdd = () => {
     if (!canSubmit) return;
@@ -165,6 +163,18 @@ export default function QuickAddModal({
     }
   };
 
+  // ── Scaled value helper for Add mode ─────────────────────────────────────
+  const scaled = (key: string): string => {
+    const base = toNum(form[key]);
+    const val = base * currentAmount;
+    // Use integer display for calories/sodium, 1 decimal for others
+    return key === 'calories' || key === 'sodium'
+      ? String(Math.round(val))
+      : String(Math.round(val * 10) / 10);
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────
+
   return (
     <Modal
       visible={visible}
@@ -177,139 +187,223 @@ export default function QuickAddModal({
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <Text style={styles.cancelText}>Cancel</Text>
-            </Pressable>
-
-            <Text style={styles.headerTitle}>Quick-add Food</Text>
-
-            <View style={styles.headerRight}>
-              {onToggleFavorite && (
-                <Pressable onPress={onToggleFavorite} hitSlop={8} style={styles.heartButton}>
-                  <Ionicons
-                    name={isFavorited ? 'heart' : 'heart-outline'}
-                    size={22}
-                    color={isFavorited ? '#FF4B6E' : theme.colors.textSecondary}
-                  />
+          {isPreFilled ? (
+            /* ═══════════════════════════════════════════════════════════
+               ADD FOOD MODE — simplified card layout
+               ═══════════════════════════════════════════════════════════ */
+            <>
+              {/* Header */}
+              <View style={styles.header}>
+                <Pressable onPress={onClose} hitSlop={8}>
+                  <Ionicons name="close" size={24} color={theme.colors.textPrimary} />
                 </Pressable>
-              )}
-              <Pressable onPress={handleAdd} hitSlop={8} disabled={!canSubmit}>
-                <Text
-                  style={[
-                    styles.addText,
-                    !canSubmit && styles.addTextDisabled,
-                  ]}
-                >
-                  Add
-                </Text>
-              </Pressable>
-            </View>
-          </View>
 
-          {/* Form */}
-          <ScrollView
-            style={styles.flex}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            <View style={styles.card}>
-              {FIELDS.map((field, index) => (
-                <View key={field.key}>
-                  <View style={styles.fieldRow}>
-                    <Text style={styles.fieldLabel}>{field.label}</Text>
+                <View style={styles.flex} />
 
-                    {field.key === 'servingAmount' ? (
-                      /* Serving Size: numeric input + tappable unit picker */
-                      <View style={styles.inputWrapper}>
-                        {isPreFilled ? (
-                          <Text style={[styles.input, styles.lockedText]}>
-                            {form.servingAmount || '—'}
-                          </Text>
-                        ) : (
-                          <TextInput
-                            style={styles.input}
-                            value={form.servingAmount ?? ''}
-                            onChangeText={(v) => updateField('servingAmount', v)}
-                            placeholder="0"
-                            placeholderTextColor={theme.colors.textTertiary}
-                            keyboardType="numeric"
-                            returnKeyType="next"
-                          />
-                        )}
-                        {isPreFilled ? (
-                          <Text style={styles.suffix}>
-                            {form.servingUnit || ''}
-                          </Text>
-                        ) : (
-                          <Pressable onPress={showUnitPicker} hitSlop={8}>
-                            <Text style={[
-                              styles.suffix,
-                              { color: form.servingUnit ? theme.colors.textSecondary : theme.colors.accent },
-                            ]}>
-                              {form.servingUnit || 'unit ▾'}
-                            </Text>
-                          </Pressable>
-                        )}
-                      </View>
-                    ) : isLocked(field.key) ? (
-                      /* Locked field — display scaled value */
-                      <View style={styles.inputWrapper}>
-                        <Text style={[styles.input, styles.lockedText]}>
-                          {field.key === 'name'
-                            ? form[field.key]
-                            : field.numeric
-                              ? Math.round(toNum(form[field.key]) * currentServings * 10) / 10
-                              : form[field.key]}
-                        </Text>
-                        {field.suffix !== '' && (
-                          <Text style={styles.suffix}>{field.suffix}</Text>
-                        )}
-                      </View>
-                    ) : (
-                      <View style={styles.inputWrapper}>
-                        <TextInput
-                          style={styles.input}
-                          value={form[field.key] ?? ''}
-                          onChangeText={(v) => updateField(field.key, v)}
-                          placeholder={field.placeholder}
-                          placeholderTextColor={theme.colors.textTertiary}
-                          keyboardType={field.numeric ? 'numeric' : 'default'}
-                          returnKeyType={
-                            index < FIELDS.length - 1 ? 'next' : 'done'
-                          }
-                        />
-                        {field.suffix !== '' && (
-                          <Text style={styles.suffix}>{field.suffix}</Text>
-                        )}
-                      </View>
-                    )}
+                {onToggleFavorite && (
+                  <Pressable onPress={onToggleFavorite} hitSlop={8}>
+                    <Ionicons
+                      name={isFavorited ? 'heart' : 'heart-outline'}
+                      size={22}
+                      color={isFavorited ? '#FF4B6E' : theme.colors.textSecondary}
+                    />
+                  </Pressable>
+                )}
+              </View>
+
+              <ScrollView
+                style={styles.flex}
+                contentContainerStyle={styles.addFoodContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Food name */}
+                <Text style={styles.addFoodName}>{form.name}</Text>
+
+                {/* Serving size info */}
+                {toNum(form.servingAmount) > 0 && (
+                  <Text style={styles.addFoodServing}>
+                    Serving: {form.servingAmount} {form.servingUnit}
+                  </Text>
+                )}
+
+                {/* Macro summary grid — 2 rows, 3 columns */}
+                <View style={styles.macroGrid}>
+                  <View style={styles.macroCell}>
+                    <Text style={styles.macroLabel}>Calories</Text>
+                    <Text style={styles.macroValue}>{scaled('calories')}</Text>
+                  </View>
+                  <View style={styles.macroCell}>
+                    <Text style={styles.macroLabel}>Carbs</Text>
+                    <Text style={styles.macroValue}>{scaled('carbs')}g</Text>
+                  </View>
+                  <View style={styles.macroCell}>
+                    <Text style={styles.macroLabel}>Fat</Text>
+                    <Text style={styles.macroValue}>{scaled('fat')}g</Text>
+                  </View>
+                  <View style={styles.macroCell}>
+                    <Text style={styles.macroLabel}>Protein</Text>
+                    <Text style={styles.macroValue}>{scaled('protein')}g</Text>
+                  </View>
+                  <View style={styles.macroCell}>
+                    <Text style={styles.macroLabel}>Sodium</Text>
+                    <Text style={styles.macroValue}>{scaled('sodium')}mg</Text>
+                  </View>
+                  <View style={styles.macroCell}>
+                    <Text style={styles.macroLabel}>Sugar</Text>
+                    <Text style={styles.macroValue}>{scaled('sugar')}g</Text>
+                  </View>
+                </View>
+
+                {/* Divider */}
+                <View style={styles.addFoodDivider} />
+
+                {/* Amount input */}
+                <View style={styles.amountCard}>
+                  <View style={styles.amountRow}>
+                    <Text style={styles.amountLabel}>Amount</Text>
+                    <TextInput
+                      style={styles.amountInput}
+                      value={form.servings ?? '1'}
+                      onChangeText={(v) => updateField('servings', v)}
+                      placeholder="1"
+                      placeholderTextColor={theme.colors.textTertiary}
+                      keyboardType="numeric"
+                      returnKeyType="done"
+                      selectTextOnFocus
+                    />
                   </View>
 
-                  {/* Computed total after Servings row */}
-                  {field.key === 'servings' &&
-                    toNum(form.servingAmount) > 0 &&
+                  {/* Computed total */}
+                  {toNum(form.servingAmount) > 0 &&
                     (form.servingUnit ?? '').trim().length > 0 && (
-                      <View style={styles.computedRow}>
-                        <Text style={styles.computedText}>
-                          = {Math.round(
-                              toNum(form.servingAmount) *
-                              Math.max(toNum(form.servings) || 1, 0.01) *
-                              100,
-                            ) / 100}{' '}
-                          {form.servingUnit?.trim()}
-                        </Text>
-                      </View>
+                      <Text style={styles.computedText}>
+                        = {Math.round(
+                            toNum(form.servingAmount) * currentAmount * 100,
+                          ) / 100}{' '}
+                        {form.servingUnit?.trim()}
+                      </Text>
                     )}
-
-                  {index < FIELDS.length - 1 && (
-                    <View style={styles.separator} />
-                  )}
                 </View>
-              ))}
-            </View>
-          </ScrollView>
+              </ScrollView>
+
+              {/* Full-width Add button */}
+              <View style={styles.addButtonContainer}>
+                <Pressable
+                  onPress={handleAdd}
+                  style={({ pressed }) => [
+                    styles.addButton,
+                    pressed && styles.addButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </Pressable>
+              </View>
+            </>
+          ) : (
+            /* ═══════════════════════════════════════════════════════════
+               CREATE FOOD MODE — full editable form
+               ═══════════════════════════════════════════════════════════ */
+            <>
+              {/* Header */}
+              <View style={styles.header}>
+                <Pressable onPress={onClose} hitSlop={8}>
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </Pressable>
+
+                <Text style={styles.headerTitle}>Create Food</Text>
+
+                <View style={styles.headerRight}>
+                  <Pressable onPress={handleAdd} hitSlop={8} disabled={!canSubmit}>
+                    <Text
+                      style={[
+                        styles.createAddText,
+                        !canSubmit && styles.addTextDisabled,
+                      ]}
+                    >
+                      Add
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+
+              {/* Form */}
+              <ScrollView
+                style={styles.flex}
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.card}>
+                  {FIELDS.map((field, index) => (
+                    <View key={field.key}>
+                      <View style={styles.fieldRow}>
+                        <Text style={styles.fieldLabel}>{field.label}</Text>
+
+                        {field.key === 'servingAmount' ? (
+                          /* Serving Size: numeric input + tappable unit picker */
+                          <View style={styles.inputWrapper}>
+                            <TextInput
+                              style={styles.input}
+                              value={form.servingAmount ?? ''}
+                              onChangeText={(v) => updateField('servingAmount', v)}
+                              placeholder="0"
+                              placeholderTextColor={theme.colors.textTertiary}
+                              keyboardType="numeric"
+                              returnKeyType="next"
+                            />
+                            <Pressable onPress={showUnitPicker} hitSlop={8}>
+                              <Text style={[
+                                styles.suffix,
+                                { color: form.servingUnit ? theme.colors.textSecondary : theme.colors.accent },
+                              ]}>
+                                {form.servingUnit || 'unit ▾'}
+                              </Text>
+                            </Pressable>
+                          </View>
+                        ) : (
+                          <View style={styles.inputWrapper}>
+                            <TextInput
+                              style={styles.input}
+                              value={form[field.key] ?? ''}
+                              onChangeText={(v) => updateField(field.key, v)}
+                              placeholder={field.placeholder}
+                              placeholderTextColor={theme.colors.textTertiary}
+                              keyboardType={field.numeric ? 'numeric' : 'default'}
+                              returnKeyType={
+                                index < FIELDS.length - 1 ? 'next' : 'done'
+                              }
+                            />
+                            {field.suffix !== '' && (
+                              <Text style={styles.suffix}>{field.suffix}</Text>
+                            )}
+                          </View>
+                        )}
+                      </View>
+
+                      {/* Computed total after Servings row */}
+                      {field.key === 'servings' &&
+                        toNum(form.servingAmount) > 0 &&
+                        (form.servingUnit ?? '').trim().length > 0 && (
+                          <View style={styles.computedRow}>
+                            <Text style={styles.computedText}>
+                              = {Math.round(
+                                  toNum(form.servingAmount) *
+                                  Math.max(toNum(form.servings) || 1, 0.01) *
+                                  100,
+                                ) / 100}{' '}
+                              {form.servingUnit?.trim()}
+                            </Text>
+                          </View>
+                        )}
+
+                      {index < FIELDS.length - 1 && (
+                        <View style={styles.separator} />
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            </>
+          )}
         </KeyboardAvoidingView>
       </SafeAreaView>
       </SafeAreaProvider>
@@ -327,6 +421,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
+
+  // ── Shared header ──────────────────────────────────────────────────────
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -346,7 +442,7 @@ const styles = StyleSheet.create({
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.textPrimary,
   },
-  addText: {
+  createAddText: {
     fontSize: theme.fontSize.md,
     fontWeight: theme.fontWeight.semibold,
     color: theme.colors.accent,
@@ -359,9 +455,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: theme.spacing.md,
   },
-  heartButton: {
-    padding: 2,
-  },
+
+  // ── Create Food mode ───────────────────────────────────────────────────
   scrollContent: {
     padding: theme.spacing.lg,
   },
@@ -415,7 +510,104 @@ const styles = StyleSheet.create({
     color: theme.colors.accent,
     textAlign: 'right',
   },
-  lockedText: {
+
+  // ── Add Food mode ──────────────────────────────────────────────────────
+  addFoodContent: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingTop: theme.spacing.sm,
+    paddingBottom: theme.spacing.lg,
+  },
+  addFoodName: {
+    fontSize: 22,
+    fontWeight: theme.fontWeight.bold,
+    color: theme.colors.textPrimary,
+    marginBottom: 4,
+  },
+  addFoodServing: {
+    fontSize: theme.fontSize.sm,
     color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.lg,
+  },
+
+  // Macro grid — 2 rows × 3 columns
+  macroGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  macroCell: {
+    width: '33.33%',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.sm,
+  },
+  macroLabel: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: theme.fontWeight.regular,
+    color: theme.colors.textSecondary,
+    marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  macroValue: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+  },
+
+  addFoodDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: theme.colors.border,
+    marginVertical: theme.spacing.lg,
+  },
+
+  // Amount input
+  amountCard: {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.md,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+  },
+  amountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  amountLabel: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.medium,
+    color: theme.colors.textPrimary,
+  },
+  amountInput: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: theme.fontWeight.semibold,
+    color: theme.colors.textPrimary,
+    textAlign: 'right',
+    minWidth: 60,
+    paddingVertical: 0,
+  },
+
+  // Full-width Add button
+  addButtonContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    paddingTop: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+  },
+  addButton: {
+    backgroundColor: theme.colors.accent,
+    borderRadius: theme.borderRadius.md,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  addButtonPressed: {
+    opacity: 0.8,
+  },
+  addButtonText: {
+    fontSize: theme.fontSize.md,
+    fontWeight: theme.fontWeight.bold,
+    color: '#FFFFFF',
   },
 });
