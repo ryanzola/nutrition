@@ -273,20 +273,20 @@ export default function QuickAddModal({
                     />
                   </View>
                 </View>
-
-                {/* Full-width Add button */}
-                <View style={styles.addButtonContainer}>
-                  <Pressable
-                    onPress={handleAdd}
-                    style={({ pressed }) => [
-                      styles.addButton,
-                      pressed && styles.addButtonPressed,
-                    ]}
-                  >
-                    <Text style={styles.addButtonText}>Add</Text>
-                  </Pressable>
-                </View>
               </ScrollView>
+
+              {/* Full-width Add button */}
+              <View style={styles.addButtonContainer}>
+                <Pressable
+                  onPress={handleAdd}
+                  style={({ pressed }) => [
+                    styles.addButton,
+                    pressed && styles.addButtonPressed,
+                  ]}
+                >
+                  <Text style={styles.addButtonText}>Add</Text>
+                </Pressable>
+              </View>
             </>
           ) : (
             /* ═══════════════════════════════════════════════════════════
@@ -581,7 +581,7 @@ const styles = StyleSheet.create({
   // Full-width Add button
   addButtonContainer: {
     paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
+    paddingBottom: 34,
     paddingTop: theme.spacing.md,
     backgroundColor: theme.colors.background,
   },
