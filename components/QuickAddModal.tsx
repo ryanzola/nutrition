@@ -122,13 +122,15 @@ export default function QuickAddModal({
   const handleAdd = () => {
     if (!canSubmit) return;
     const servings = Math.max(toNum(form.servings) || 1, 0.01);
-    const servingsLabel = servings !== 1 ? ` (×${servings})` : '';
     const servingAmt = toNum(form.servingAmount);
+    const scaledServingAmt = servingAmt > 0
+      ? Math.round(servingAmt * servings * 10) / 10
+      : undefined;
     const servingUnit = form.servingUnit?.trim() || undefined;
     onAdd({
-      name:          form.name.trim() + servingsLabel,
-      servingAmount: servingAmt > 0 ? servingAmt : undefined,
-      servingUnit:   servingAmt > 0 ? servingUnit : undefined,
+      name:          form.name.trim(),
+      servingAmount: scaledServingAmt,
+      servingUnit:   scaledServingAmt ? servingUnit : undefined,
       calories:      Math.round(toNum(form.calories) * servings),
       carbs:         Math.round(toNum(form.carbs) * servings * 10) / 10,
       fat:           Math.round(toNum(form.fat) * servings * 10) / 10,
