@@ -3,7 +3,7 @@
  *
  * React hook that subscribes to the authenticated user's
  * recipes collection in Firestore and provides helpers to
- * create and delete recipes.
+ * create and archive recipes.
  */
 
 import { useCallback, useEffect, useState } from 'react';
@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { Recipe } from '@/types';
 import {
   createRecipe as createRecipeService,
-  deleteRecipe as deleteRecipeService,
+  archiveRecipe as archiveRecipeService,
   subscribeToRecipes,
 } from '@/services/firestore';
 
@@ -24,8 +24,8 @@ interface UseRecipesResult {
   createRecipe: (
     recipe: Omit<Recipe, 'id' | 'createdAt' | 'updatedAt'>,
   ) => Promise<string>;
-  /** Delete a recipe by ID */
-  deleteRecipe: (id: string) => Promise<void>;
+  /** Soft-delete a recipe by ID */
+  archiveRecipe: (id: string) => Promise<void>;
 }
 
 /**
@@ -70,13 +70,13 @@ export function useRecipes(uid: string | null): UseRecipesResult {
     [uid],
   );
 
-  const deleteRecipe = useCallback(
+  const archiveRecipe = useCallback(
     async (id: string): Promise<void> => {
       if (!uid) return;
-      await deleteRecipeService(uid, id);
+      await archiveRecipeService(uid, id);
     },
     [uid],
   );
 
-  return { recipes, loading, createRecipe, deleteRecipe };
+  return { recipes, loading, createRecipe, archiveRecipe };
 }

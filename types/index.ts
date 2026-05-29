@@ -81,6 +81,8 @@ export interface Recipe {
   name: string;
   entries: FoodEntry[];
   totals: NutritionTotals;
+  /** Whether this recipe has been soft-deleted. */
+  archived?: boolean;
   /** Unix-ms timestamp of when this recipe was created. */
   createdAt: number;
 }

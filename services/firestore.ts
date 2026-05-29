@@ -327,11 +327,11 @@ export async function createRecipe(
 }
 
 /**
- * Deletes a recipe by ID.
+ * Soft-deletes a recipe by setting archived = true.
  */
-export async function deleteRecipe(uid: string, recipeId: string): Promise<void> {
+export async function archiveRecipe(uid: string, recipeId: string): Promise<void> {
   const ref = doc(db, 'users', uid, 'recipes', recipeId);
-  await deleteDoc(ref);
+  await setDoc(ref, { archived: true }, { merge: true });
 }
 
 /**
@@ -347,7 +347,9 @@ export function subscribeToRecipes(
   const q = query(col, orderBy('createdAt', 'desc'));
 
   return onSnapshot(q, (snap) => {
-    const recipes = snap.docs.map((d) => d.data() as Recipe);
+    const recipes = snap.docs
+      .map((d) => d.data() as Recipe)
+      .filter((r) => !r.archived);
     callback(recipes);
   });
 }

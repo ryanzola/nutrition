@@ -4,14 +4,13 @@
  * Route: /recipe
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   Pressable,
   StyleSheet,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -20,21 +19,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp } from '@/context/AppContext';
 import { useRecipes } from '@/hooks/useRecipes';
 import { theme } from '@/constants/theme';
+import RecipeDetailModal from '@/components/RecipeDetailModal';
+import type { Recipe } from '@/types';
 
 export default function RecipeListScreen() {
   const { uid } = useApp();
-  const { recipes, deleteRecipe } = useRecipes(uid);
-
-  const handleLongPress = (recipeId: string, recipeName: string) => {
-    Alert.alert('Delete Recipe', `Are you sure you want to delete "${recipeName}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => deleteRecipe(recipeId),
-      },
-    ]);
-  };
+  const { recipes, archiveRecipe } = useRecipes(uid);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -77,7 +68,7 @@ export default function RecipeListScreen() {
             <Pressable
               key={recipe.id}
               style={styles.recipeCard}
-              onLongPress={() => handleLongPress(recipe.id, recipe.name)}
+              onPress={() => setSelectedRecipe(recipe)}
             >
               <View style={styles.recipeIcon}>
                 <Ionicons
@@ -102,6 +93,14 @@ export default function RecipeListScreen() {
           ))
         )}
       </ScrollView>
+
+      {/* Recipe detail modal */}
+      <RecipeDetailModal
+        visible={!!selectedRecipe}
+        recipe={selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+        onDelete={archiveRecipe}
+      />
     </SafeAreaView>
   );
 }

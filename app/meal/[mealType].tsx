@@ -29,6 +29,7 @@ import { theme } from '@/constants/theme';
 import type { MealType, FoodEntry, FavoriteFood, Recipe, SearchResult } from '@/types';
 
 import QuickAddModal from '@/components/QuickAddModal';
+import RecipeDetailModal from '@/components/RecipeDetailModal';
 
 export default function MealScreen() {
   const { mealType: mealTypeParam } = useLocalSearchParams<{ mealType: string }>();
@@ -37,12 +38,13 @@ export default function MealScreen() {
 
   const { uid, selectedDate } = useApp();
   const { dayData, addEntry } = useDay(uid, selectedDate);
-  const { recipes } = useRecipes(uid);
+  const { recipes, archiveRecipe } = useRecipes(uid);
   const { favorites, isFavorited, toggleFavorite } = useFavorites(uid);
 
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [selectedFavorite, setSelectedFavorite] = useState<FavoriteFood | null>(null);
   const [selectedSearchResult, setSelectedSearchResult] = useState<SearchResult | null>(null);
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [activeTab, setActiveTab] = useState<'recent' | 'favorites' | 'recipes'>('recent');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -385,7 +387,7 @@ export default function MealScreen() {
             <Pressable
               key={recipe.id}
               style={styles.foodRow}
-              onPress={() => handleAddRecipeToMeal(recipe)}
+              onPress={() => setSelectedRecipe(recipe)}
             >
               <View style={styles.foodRowLeft}>
                 <Text style={styles.foodName}>{recipe.name}</Text>
@@ -395,9 +397,9 @@ export default function MealScreen() {
                 </Text>
               </View>
               <Ionicons
-                name="add-circle-outline"
-                size={24}
-                color={theme.colors.accent}
+                name="chevron-forward"
+                size={18}
+                color={theme.colors.textTertiary}
               />
             </Pressable>
           ))
@@ -448,6 +450,18 @@ export default function MealScreen() {
                 })
               : undefined
         }
+      />
+
+      {/* Recipe Detail Modal */}
+      <RecipeDetailModal
+        visible={!!selectedRecipe}
+        recipe={selectedRecipe}
+        onClose={() => setSelectedRecipe(null)}
+        onAddToMeal={(recipe) => {
+          handleAddRecipeToMeal(recipe);
+          setSelectedRecipe(null);
+        }}
+        onDelete={archiveRecipe}
       />
     </SafeAreaView>
   );
