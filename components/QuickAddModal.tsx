@@ -272,17 +272,6 @@ export default function QuickAddModal({
                       selectTextOnFocus
                     />
                   </View>
-
-                  {/* Computed total */}
-                  {toNum(form.servingAmount) > 0 &&
-                    (form.servingUnit ?? '').trim().length > 0 && (
-                      <Text style={styles.computedText}>
-                        = {Math.round(
-                            toNum(form.servingAmount) * currentAmount * 100,
-                          ) / 100}{' '}
-                        {form.servingUnit?.trim()}
-                      </Text>
-                    )}
                 </View>
               </ScrollView>
 
