@@ -240,6 +240,17 @@ export default function DashboardScreen() {
     text += `  Carbs: ${Math.round(carbsCal)} cal (${pct(carbsCal)}%)\n`;
     text += `  Fat: ${Math.round(fatCal)} cal (${pct(fatCal)}%)\n`;
 
+    // Goal completion
+    const goalPct = (actual: number, goal: number) => goal > 0 ? Math.round((actual / goal) * 100) : 0;
+
+    text += `\nGoal Completion:\n`;
+    text += `  Calories: ${goalPct(totals.calories, settings.calorieGoal)}%\n`;
+    text += `  Carbs: ${goalPct(totals.carbs, settings.carbsGoal)}%\n`;
+    text += `  Fat: ${goalPct(totals.fat, settings.fatGoal)}%\n`;
+    text += `  Protein: ${goalPct(totals.protein, settings.proteinGoal)}%\n`;
+    text += `  Sodium: ${goalPct(totals.sodium, settings.sodiumGoal)}%\n`;
+    text += `  Sugar: ${goalPct(totals.sugar, settings.sugarGoal)}%\n`;
+
     await Share.share({ message: text });
   }, [dayData, totals, settings, selectedDate, isToday, formattedDate]);
 
