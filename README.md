@@ -11,7 +11,7 @@
 
 [![License](https://img.shields.io/badge/License-Private-red?style=flat-square)](#)
 [![Platform](https://img.shields.io/badge/Platform-iOS-lightgrey?style=flat-square&logo=apple)](#)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)](#)
+[![PRs](https://img.shields.io/badge/PRs-not_accepted-red?style=flat-square)](#)
 
 ---
 
