@@ -22,24 +22,26 @@
 
 ---
 
-## ✨ Features
+## Features
 
 <table>
 <tr>
 <td width="50%">
 
-### 📊 Dashboard
+### Dashboard
 - Animated SVG calorie ring with daily progress
 - Color-coded macro bars (carbs, fat, protein)
 - Sodium & sugar micro-nutrient tracking
 - Date navigation with calendar bottom sheet
+- Share/copy daily summary with macro analysis
 
 </td>
 <td width="50%">
 
-### 🍽️ Meal Tracking
+### Meal Tracking
 - 4 meal categories (Breakfast, Lunch, Dinner, Snacks)
-- Quick-add food with servings multiplier
+- Dual-mode food entry: Create Food (full form) & Add Food (simplified card)
+- Servings multiplier (macros stored per 1 serving, scaled at display)
 - Edit, delete, and move entries between meals
 - Long-press context menu with iOS ActionSheet
 
@@ -48,18 +50,39 @@
 <tr>
 <td width="50%">
 
-### 🧑‍🍳 Recipes
-- Create compound foods from individual ingredients
-- Auto-calculated nutrition totals
-- Reusable across any meal category
+### Food Search & Favorites
+- Integrated USDA FoodData Central + Open Food Facts search
+- Favorites system for quick access to frequent foods
+- Recent entries with one-tap re-add
 
 </td>
 <td width="50%">
 
-### ⚙️ Settings
+### Recipes
+- Create compound foods from individual ingredients
+- Recipe detail view with ingredient list & macro grid
+- Soft delete (archived) preserving historical data integrity
+- Auto-calculated nutrition totals
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### Share Day
+- One-tap share of full daily nutrition summary
+- Per-meal breakdown with individual entries
+- Daily totals with actual vs target goals
+- Macro calorie composition (P/C/F percentages)
+- Goal completion percentages
+
+</td>
+<td width="50%">
+
+### Settings
 - Customizable calorie, macro & micro goals
 - Persistent settings synced to Firestore
-- Silent anonymous auth — no login required
+- Silent anonymous auth -- no login required
 
 </td>
 </tr>
@@ -139,17 +162,21 @@ nutrition/
 │   ├── FoodEntryRow.tsx          # Individual food item row
 │   ├── CalendarBottomSheet.tsx   # Date picker modal
 │   ├── FoodOptionSheet.tsx       # "Add food" action sheet
-│   └── QuickAddModal.tsx         # Food entry form with servings
+│   ├── QuickAddModal.tsx         # Dual-mode: Create Food / Add Food
+│   └── RecipeDetailModal.tsx     # Recipe ingredients & actions
 ├── context/
 │   └── AppContext.tsx            # Global state provider
 ├── hooks/
 │   ├── useAuth.ts                # Firebase anonymous auth
 │   ├── useDay.ts                 # Real-time day data sync
 │   ├── useSettings.ts            # User goals subscription
-│   └── useRecipes.ts             # Recipe CRUD
+│   ├── useRecipes.ts             # Recipe CRUD + archive
+│   ├── useFavorites.ts           # Favorite foods management
+│   └── useSearch.ts              # USDA + Open Food Facts search
 ├── services/
 │   ├── auth.ts                   # Auth state management
-│   └── firestore.ts              # Firestore CRUD operations
+│   ├── firestore.ts              # Firestore CRUD operations
+│   └── foodSearch.ts             # External food API integration
 ├── constants/
 │   ├── theme.ts                  # Design tokens (colors, spacing, fonts)
 │   └── defaults.ts               # Default goals & meal config
@@ -160,7 +187,7 @@ nutrition/
 
 ---
 
-## 📐 Data Model
+## Data Model
 
 ```
 Firestore
@@ -174,7 +201,17 @@ Firestore
     │   │   ├── dinner.entries[]    → FoodEntry[]
     │   │   └── snacks.entries[]    → FoodEntry[]
     │   └── totals                  → NutritionTotals
-    └── recipes/{id}              → Recipe (compound foods)
+    ├── recipes/{id}              → Recipe (compound foods)
+    │   └── archived?: boolean      (soft delete)
+    └── favorites/{id}            → FavoriteFood
+
+FoodEntry:
+  - name, calories, carbs, fat, protein, sodium, sugar
+  - servingAmount?, servingUnit?   (per 1 serving from label)
+  - servings?                      (consumption multiplier)
+  - recipeId?                      (source recipe reference)
+
+Totals are computed at write time: macro × servings for each entry.
 ```
 
 ---
@@ -223,17 +260,21 @@ service cloud.firestore {
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 - [x] Core calorie & macro tracking
 - [x] Sodium & sugar micro-nutrient bars
-- [x] Servings multiplier
+- [x] Servings multiplier (label-based, scaled at display)
 - [x] Recipe / compound food builder
+- [x] Recipe detail view + soft delete
 - [x] Calendar date navigation
 - [x] Customizable nutrition goals
-- [ ] Favorites system for quick food access
-- [ ] Food search API (USDA + Open Food Facts)
-- [ ] AI-powered barcode/food scanning
+- [x] Favorites system for quick food access
+- [x] Food search API (USDA + Open Food Facts)
+- [x] Dual-mode food entry (Create Food / Add Food)
+- [x] Share daily nutrition summary
+- [ ] Recipe editing ([#8](https://github.com/ryanzola/nutrition/issues/8))
+- [ ] Barcode scanning ([#7](https://github.com/ryanzola/nutrition/issues/7))
 
 ---
 
