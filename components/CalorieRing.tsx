@@ -97,7 +97,7 @@ export default function CalorieRing({
 
       {/* Center content overlaid on top of the SVG */}
       <View style={styles.centerContent}>
-        <Text style={styles.consumedText}>{consumed}</Text>
+        <Text style={styles.consumedText}>{Math.round(consumed)}</Text>
         <Text style={styles.goalText}>of {goal} Cal</Text>
         <Pressable onPress={onEditPress} hitSlop={8}>
           <Text style={styles.editText}>Edit</Text>
