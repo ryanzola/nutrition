@@ -20,6 +20,7 @@ import {
   onSnapshot,
   query,
   orderBy,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { DEFAULT_SETTINGS } from '../constants/defaults';
@@ -29,6 +30,7 @@ import type {
   FoodEntry,
   MealType,
   NutritionTotals,
+  RecentFood,
   Recipe,
   UserSettings,
 } from '../types';
@@ -444,4 +446,86 @@ export async function getRecentEntries(
   }
 
   return entries.sort((a, b) => b.createdAt - a.createdAt);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Recent Foods
+// ═══════════════════════════════════════════════════════════════════════════
+
+const MAX_RECENT_FOODS = 200;
+
+/**
+ * Creates a deterministic Firestore-safe document ID from a food name.
+ */
+function recentFoodId(name: string): string {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[\/\.\#\$\[\]]/g, '_')
+    .replace(/\s+/g, '_')
+    .slice(0, 200);
+}
+
+/**
+ * Upserts a food into the recent foods collection.
+ * If a food with the same name exists, updates it with the latest data.
+ */
+export async function addRecentFood(
+  uid: string,
+  entry: Omit<FoodEntry, 'id' | 'createdAt'>,
+): Promise<void> {
+  const id = recentFoodId(entry.name);
+  const recent: RecentFood = {
+    id,
+    name: entry.name,
+    calories: entry.calories,
+    carbs: entry.carbs,
+    fat: entry.fat,
+    protein: entry.protein,
+    sodium: entry.sodium,
+    sugar: entry.sugar,
+    servingAmount: entry.servingAmount,
+    servingUnit: entry.servingUnit,
+    servings: entry.servings,
+    lastUsed: Date.now(),
+  };
+
+  const ref = doc(db, 'users', uid, 'recentFoods', id);
+  await setDoc(ref, recent);
+
+  // Trim in the background — don't block the caller
+  trimRecentFoods(uid).catch(() => {});
+}
+
+/**
+ * Subscribes to the most recent 200 foods, ordered by lastUsed descending.
+ */
+export function subscribeToRecentFoods(
+  uid: string,
+  callback: (foods: RecentFood[]) => void,
+): () => void {
+  const col = collection(db, 'users', uid, 'recentFoods');
+  const q = query(col, orderBy('lastUsed', 'desc'), limit(MAX_RECENT_FOODS));
+
+  return onSnapshot(q, (snap) => {
+    const foods = snap.docs.map((d) => d.data() as RecentFood);
+    callback(foods);
+  });
+}
+
+/**
+ * Trims the recent foods collection to MAX_RECENT_FOODS.
+ * Deletes the oldest entries beyond the limit.
+ */
+async function trimRecentFoods(uid: string): Promise<void> {
+  const col = collection(db, 'users', uid, 'recentFoods');
+  const q = query(col, orderBy('lastUsed', 'desc'));
+  const snap = await getDocs(q);
+
+  if (snap.size <= MAX_RECENT_FOODS) return;
+
+  const toDelete = snap.docs.slice(MAX_RECENT_FOODS);
+  for (const d of toDelete) {
+    await deleteDoc(d.ref);
+  }
 }

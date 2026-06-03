@@ -87,6 +87,26 @@ export interface Recipe {
   createdAt: number;
 }
 
+// ── Recent foods ────────────────────────────────────────────────────────────
+
+/** A recently logged food, stored in Firestore for persistence across rebuilds. */
+export interface RecentFood {
+  /** Deterministic ID derived from the food name. */
+  id: string;
+  name: string;
+  servingAmount?: number;
+  servingUnit?: string;
+  servings?: number;
+  calories: number;
+  carbs: number;
+  fat: number;
+  protein: number;
+  sodium: number;
+  sugar: number;
+  /** Unix-ms timestamp of when this food was last logged. */
+  lastUsed: number;
+}
+
 // ── User settings ───────────────────────────────────────────────────────────
 
 /**

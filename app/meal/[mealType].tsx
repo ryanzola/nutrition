@@ -25,8 +25,10 @@ import { useDay } from '@/hooks/useDay';
 import { useRecipes } from '@/hooks/useRecipes';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useSearch } from '@/hooks/useSearch';
+import { useRecentFoods } from '@/hooks/useRecentFoods';
+import { addRecentFood } from '@/services/firestore';
 import { theme } from '@/constants/theme';
-import type { MealType, FoodEntry, FavoriteFood, Recipe, SearchResult } from '@/types';
+import type { MealType, FoodEntry, FavoriteFood, Recipe, RecentFood, SearchResult } from '@/types';
 
 import QuickAddModal from '@/components/QuickAddModal';
 import RecipeDetailModal from '@/components/RecipeDetailModal';
@@ -40,6 +42,7 @@ export default function MealScreen() {
   const { dayData, addEntry } = useDay(uid, selectedDate);
   const { recipes, archiveRecipe } = useRecipes(uid);
   const { favorites, isFavorited, toggleFavorite } = useFavorites(uid);
+  const { recentFoods } = useRecentFoods(uid);
 
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [selectedFavorite, setSelectedFavorite] = useState<FavoriteFood | null>(null);
@@ -56,31 +59,23 @@ export default function MealScreen() {
   );
   const isSearchActive = searchQuery.trim().length >= 2 && activeTab === 'recent';
 
-  // Recent entries from today's data across all meals
-  const recentEntries = React.useMemo(() => {
-    if (!dayData) return [];
-    const all: FoodEntry[] = [];
-    for (const m of Object.values(dayData.meals)) {
-      all.push(...m.entries);
-    }
-    return all.sort((a, b) => b.createdAt - a.createdAt).slice(0, 20);
-  }, [dayData]);
+
 
   // ── Handlers ───────────────────────────────────────────────────────────
   const handleQuickAdd = useCallback(
     async (entry: Omit<FoodEntry, 'id' | 'createdAt'>) => {
       await addEntry(mealType, entry);
+      if (uid) addRecentFood(uid, entry).catch(() => {});
       setQuickAddVisible(false);
       setSelectedFavorite(null);
       router.back();
     },
-    [addEntry, mealType],
+    [addEntry, mealType, uid],
   );
 
   const handleAddRecipeToMeal = useCallback(
     async (recipe: Recipe) => {
-      // Add the recipe as a single food entry with combined nutrition
-      await addEntry(mealType, {
+      const recipeEntry = {
         name: recipe.name,
         calories: recipe.totals.calories,
         carbs: recipe.totals.carbs,
@@ -89,17 +84,19 @@ export default function MealScreen() {
         sodium: recipe.totals.sodium,
         sugar: recipe.totals.sugar,
         recipeId: recipe.id,
-      });
+      };
+      await addEntry(mealType, recipeEntry);
+      if (uid) addRecentFood(uid, recipeEntry).catch(() => {});
       router.back();
     },
-    [addEntry, mealType],
+    [addEntry, mealType, uid],
   );
 
   const handleReAddEntry = useCallback(
-    (entry: FoodEntry) => {
+    (entry: RecentFood | FoodEntry) => {
       // Open QuickAddModal pre-filled so user can adjust servings
       setSelectedFavorite({
-        id: entry.id,
+        id: 'id' in entry ? entry.id : '',
         name: entry.name,
         servingAmount: entry.servingAmount,
         servingUnit: entry.servingUnit,
@@ -110,7 +107,7 @@ export default function MealScreen() {
         protein: entry.protein,
         sodium: entry.sodium,
         sugar: entry.sugar,
-        createdAt: entry.createdAt,
+        createdAt: 'createdAt' in entry ? entry.createdAt : Date.now(),
       });
       setSelectedSearchResult(null);
       setQuickAddVisible(true);
@@ -147,7 +144,7 @@ export default function MealScreen() {
     [searchQuery],
   );
 
-  const filteredRecent = filterBySearch(recentEntries);
+  const filteredRecent = filterBySearch(recentFoods);
   const filteredFavorites = filterBySearch(favorites);
   const filteredRecipes = filterBySearch(recipes);
 
