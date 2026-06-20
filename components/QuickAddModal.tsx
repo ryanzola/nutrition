@@ -7,7 +7,7 @@
  *   an Amount input and full-width Add button.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   KeyboardAvoidingView,
@@ -322,15 +322,21 @@ export default function QuickAddModal({
                 keyboardShouldPersistTaps="handled"
               >
                 <View style={styles.card}>
-                  {FIELDS.map((field, index) => (
+                  {FIELDS.map((field, index) => {
+                    const inputRef = React.createRef<TextInput>();
+                    return (
                     <View key={field.key}>
-                      <View style={styles.fieldRow}>
+                      <Pressable
+                        style={styles.fieldRow}
+                        onPress={() => inputRef.current?.focus()}
+                      >
                         <Text style={styles.fieldLabel}>{field.label}</Text>
 
                         {field.key === 'servingAmount' ? (
                           /* Serving Size: numeric input + tappable unit picker */
                           <View style={styles.inputWrapper}>
                             <TextInput
+                              ref={inputRef}
                               style={styles.input}
                               value={form.servingAmount ?? ''}
                               onChangeText={(v) => updateField('servingAmount', v)}
@@ -351,6 +357,7 @@ export default function QuickAddModal({
                         ) : (
                           <View style={styles.inputWrapper}>
                             <TextInput
+                              ref={inputRef}
                               style={styles.input}
                               value={form[field.key] ?? ''}
                               onChangeText={(v) => updateField(field.key, v)}
@@ -366,7 +373,7 @@ export default function QuickAddModal({
                             )}
                           </View>
                         )}
-                      </View>
+                      </Pressable>
 
                       {/* Computed total after Servings row */}
                       {field.key === 'servings' &&
@@ -388,7 +395,8 @@ export default function QuickAddModal({
                         <View style={styles.separator} />
                       )}
                     </View>
-                  ))}
+                    );
+                  })}
                 </View>
               </ScrollView>
             </>
