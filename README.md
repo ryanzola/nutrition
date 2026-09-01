@@ -6,8 +6,8 @@
 
 [![React Native](https://img.shields.io/badge/React_Native-0.85-61DAFB?style=for-the-badge&logo=react&logoColor=white)](https://reactnative.dev/)
 [![Expo](https://img.shields.io/badge/Expo_SDK_56-000020?style=for-the-badge&logo=expo&logoColor=white)](https://expo.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-11.8-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Firebase](https://img.shields.io/badge/Firebase-12.13-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com/)
 
 [![License](https://img.shields.io/badge/License-Private-red?style=flat-square)](#)
 [![Platform](https://img.shields.io/badge/Platform-iOS-lightgrey?style=flat-square&logo=apple)](#)
@@ -28,12 +28,13 @@
 <tr>
 <td width="50%">
 
-### Dashboard
+### Tracker
 - Animated SVG calorie ring with daily progress
 - Color-coded macro bars (carbs, fat, protein)
 - Sodium & sugar micro-nutrient tracking
 - Date navigation with calendar bottom sheet
 - Share/copy daily summary with macro analysis
+- Floating pill tab bar (Tracker / Weight / Settings)
 
 </td>
 <td width="50%">
@@ -52,8 +53,8 @@
 
 ### Food Search & Favorites
 - Integrated USDA FoodData Central + Open Food Facts search
-- Favorites system for quick access to frequent foods
-- Recent entries with one-tap re-add
+- Favorites system, most recently used first
+- Recent foods with one-tap re-add (pre-fills last-used serving)
 
 </td>
 <td width="50%">
@@ -83,6 +84,26 @@
 - Customizable calorie, macro & micro goals
 - Persistent settings synced to Firestore
 - Silent anonymous auth -- no login required
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### Trends
+- Weekly & monthly intake vs maintenance
+- Running calorie deficit/surplus for days elapsed
+- Daily average and days-logged tracking
+- Copy AI-digestible report to clipboard
+
+</td>
+<td width="50%">
+
+### Weight Tracking
+- Daily weigh-ins with backdating via calendar picker
+- Time-scaled line chart with week/month/year windows
+- Current / change / average stats per window
+- Copy AI-digestible weight log to clipboard
 
 </td>
 </tr>
@@ -144,9 +165,13 @@
 ```
 nutrition/
 ├── app/                          # Expo Router screens
-│   ├── _layout.tsx               # Root layout (SafeArea + AppProvider)
-│   ├── index.tsx                 # Dashboard (calorie ring, macros, meals)
-│   ├── info.tsx                  # Settings hub
+│   ├── _layout.tsx               # Root stack layout (SafeArea + AppProvider)
+│   ├── (tabs)/                   # Bottom tab group
+│   │   ├── _layout.tsx           # Tab layout (floating pill bar)
+│   │   ├── index.tsx             # Tracker (calorie ring, macros, meals)
+│   │   ├── weight.tsx            # Weigh-in logging + trend chart
+│   │   └── settings.tsx          # Settings hub
+│   ├── trends.tsx                # Weekly/monthly intake vs maintenance
 │   ├── calorie-settings.tsx      # Edit calorie goal
 │   ├── macros-settings.tsx       # Edit carbs/fat/protein split
 │   ├── micros-settings.tsx       # Edit sodium/sugar goals
@@ -163,7 +188,9 @@ nutrition/
 │   ├── CalendarBottomSheet.tsx   # Date picker modal
 │   ├── FoodOptionSheet.tsx       # "Add food" action sheet
 │   ├── QuickAddModal.tsx         # Dual-mode: Create Food / Add Food
-│   └── RecipeDetailModal.tsx     # Recipe ingredients & actions
+│   ├── RecipeDetailModal.tsx     # Recipe ingredients & actions
+│   ├── WeightChart.tsx           # Time-scaled SVG weight line chart
+│   └── FloatingTabBar.tsx        # Pill-style bottom tab bar
 ├── context/
 │   └── AppContext.tsx            # Global state provider
 ├── hooks/
@@ -172,6 +199,10 @@ nutrition/
 │   ├── useSettings.ts            # User goals subscription
 │   ├── useRecipes.ts             # Recipe CRUD + archive
 │   ├── useFavorites.ts           # Favorite foods management
+│   ├── useRecentFoods.ts         # Recent foods subscription
+│   ├── useTrends.ts              # Weekly/monthly intake aggregation
+│   ├── useWeights.ts             # Weigh-in subscription + logging
+│   ├── useScrollToTopOnFocus.ts  # Reset tab scroll on focus
 │   └── useSearch.ts              # USDA + Open Food Facts search
 ├── services/
 │   ├── auth.ts                   # Auth state management
@@ -203,7 +234,10 @@ Firestore
     │   └── totals                  → NutritionTotals
     ├── recipes/{id}              → Recipe (compound foods)
     │   └── archived?: boolean      (soft delete)
-    └── favorites/{id}            → FavoriteFood
+    ├── favorites/{id}            → FavoriteFood
+    │   └── lastUsed?: number       (sorted most recently used first)
+    ├── recentFoods/{nameId}      → RecentFood (upserted by name, max 200)
+    └── weights/{YYYY-MM-DD}      → WeightEntry (daily weigh-in, lb)
 
 FoodEntry:
   - name, calories, carbs, fat, protein, sodium, sugar
@@ -273,6 +307,10 @@ service cloud.firestore {
 - [x] Food search API (USDA + Open Food Facts)
 - [x] Dual-mode food entry (Create Food / Add Food)
 - [x] Share daily nutrition summary
+- [x] Weekly & monthly trends (intake vs maintenance)
+- [x] Daily weight tracking with trend chart
+- [x] Bottom tab navigation (Tracker / Weight / Settings)
+- [x] AI-digestible clipboard reports (trends + weight)
 - [ ] Recipe editing ([#8](https://github.com/ryanzola/nutrition/issues/8))
 - [ ] Barcode scanning ([#7](https://github.com/ryanzola/nutrition/issues/7))
 
