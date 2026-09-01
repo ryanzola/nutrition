@@ -361,7 +361,10 @@ export function subscribeToRecipes(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /**
- * Subscribes to real-time favorite foods list, ordered by creation date.
+ * Subscribes to real-time favorite foods list, most recently used first.
+ *
+ * Sorted client-side by `lastUsed` (falling back to `createdAt`) so that
+ * favorites saved before the `lastUsed` field existed still sort correctly.
  *
  * @returns An unsubscribe function.
  */
@@ -370,12 +373,13 @@ export function subscribeToFavorites(
   callback: (favorites: FavoriteFood[]) => void,
 ): () => void {
   const col = collection(db, 'users', uid, 'favorites');
-  const q = query(col, orderBy('createdAt', 'desc'));
 
   return onSnapshot(
-    q,
+    col,
     (snap) => {
-      const favorites = snap.docs.map((d) => d.data() as FavoriteFood);
+      const favorites = snap.docs
+        .map((d) => d.data() as FavoriteFood)
+        .sort((a, b) => (b.lastUsed ?? b.createdAt) - (a.lastUsed ?? a.createdAt));
       callback(favorites);
     },
     (error) => {
@@ -393,15 +397,25 @@ export async function addFavorite(
   food: Omit<FavoriteFood, 'id' | 'createdAt'>,
 ): Promise<string> {
   const id = generateId();
+  const now = Date.now();
   const favorite: FavoriteFood = {
     ...food,
     id,
-    createdAt: Date.now(),
+    createdAt: now,
+    lastUsed: now,
   };
 
   const ref = doc(db, 'users', uid, 'favorites', id);
   await setDoc(ref, favorite);
   return id;
+}
+
+/**
+ * Marks a favorite as just-used so it sorts to the top of the list.
+ */
+export async function touchFavorite(uid: string, favoriteId: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'favorites', favoriteId);
+  await setDoc(ref, { lastUsed: Date.now() }, { merge: true });
 }
 
 /**

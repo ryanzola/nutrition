@@ -12,6 +12,7 @@ import {
   subscribeToFavorites,
   addFavorite as addFavoriteToFirestore,
   removeFavorite as removeFavoriteFromFirestore,
+  touchFavorite,
 } from '@/services/firestore';
 import type { FavoriteFood } from '@/types';
 
@@ -28,6 +29,8 @@ interface UseFavoritesResult {
   removeFavorite: (favoriteId: string) => Promise<void>;
   /** Toggle favorite status for a food entry. Returns the new favorited state. */
   toggleFavorite: (food: Omit<FavoriteFood, 'id' | 'createdAt'>) => Promise<boolean>;
+  /** If a favorite matches this food name, bump it to the top of the list. */
+  markFavoriteUsed: (name: string) => void;
 }
 
 export function useFavorites(uid: string | null): UseFavoritesResult {
@@ -100,6 +103,17 @@ export function useFavorites(uid: string | null): UseFavoritesResult {
     [uid, favoriteNameMap],
   );
 
+  const markFavoriteUsed = useCallback(
+    (name: string) => {
+      if (!uid) return;
+      const existing = favoriteNameMap.get(name.toLowerCase());
+      if (existing) {
+        touchFavorite(uid, existing.id).catch(() => {});
+      }
+    },
+    [uid, favoriteNameMap],
+  );
+
   return {
     favorites,
     isFavorited,
@@ -107,5 +121,6 @@ export function useFavorites(uid: string | null): UseFavoritesResult {
     addFavorite,
     removeFavorite,
     toggleFavorite,
+    markFavoriteUsed,
   };
 }

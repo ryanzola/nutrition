@@ -41,7 +41,7 @@ export default function MealScreen() {
   const { uid, selectedDate } = useApp();
   const { dayData, addEntry } = useDay(uid, selectedDate);
   const { recipes, archiveRecipe } = useRecipes(uid);
-  const { favorites, isFavorited, toggleFavorite } = useFavorites(uid);
+  const { favorites, isFavorited, toggleFavorite, markFavoriteUsed } = useFavorites(uid);
   const { recentFoods } = useRecentFoods(uid);
 
   const [quickAddVisible, setQuickAddVisible] = useState(false);
@@ -66,11 +66,12 @@ export default function MealScreen() {
     async (entry: Omit<FoodEntry, 'id' | 'createdAt'>) => {
       await addEntry(mealType, entry);
       if (uid) addRecentFood(uid, entry).catch(() => {});
+      markFavoriteUsed(entry.name);
       setQuickAddVisible(false);
       setSelectedFavorite(null);
       router.back();
     },
-    [addEntry, mealType, uid],
+    [addEntry, mealType, uid, markFavoriteUsed],
   );
 
   const handleAddRecipeToMeal = useCallback(
@@ -87,9 +88,10 @@ export default function MealScreen() {
       };
       await addEntry(mealType, recipeEntry);
       if (uid) addRecentFood(uid, recipeEntry).catch(() => {});
+      markFavoriteUsed(recipeEntry.name);
       router.back();
     },
-    [addEntry, mealType, uid],
+    [addEntry, mealType, uid, markFavoriteUsed],
   );
 
   const handleReAddEntry = useCallback(

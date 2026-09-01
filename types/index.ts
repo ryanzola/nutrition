@@ -158,6 +158,8 @@ export interface FavoriteFood {
   sugar: number;
   /** Unix-ms timestamp of when this was favorited. */
   createdAt: number;
+  /** Unix-ms timestamp of when this favorite was last logged to a meal. */
+  lastUsed?: number;
 }
 
 // ── Search results ──────────────────────────────────────────────────────────
