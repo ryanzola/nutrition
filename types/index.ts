@@ -107,6 +107,22 @@ export interface RecentFood {
   lastUsed: number;
 }
 
+// ── Weight entry ────────────────────────────────────────────────────────────
+
+/**
+ * A single daily weigh-in. One document per day, upserted on re-entry.
+ *
+ * Firestore path: `users/{uid}/weights/{YYYY-MM-DD}`
+ */
+export interface WeightEntry {
+  /** ISO date string in YYYY-MM-DD format (also the document ID). */
+  date: string;
+  /** Body weight in pounds. */
+  weight: number;
+  /** Unix-ms timestamp of the last update to this entry. */
+  updatedAt: number;
+}
+
 // ── User settings ───────────────────────────────────────────────────────────
 
 /**

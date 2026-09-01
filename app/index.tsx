@@ -278,7 +278,18 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.headerRight}>
-          <Pressable onPress={() => router.push('/trends')} hitSlop={12}>
+          <Pressable onPress={() => router.push('/weight')} hitSlop={12}>
+            <Ionicons
+              name="scale-outline"
+              size={22}
+              color={theme.colors.textPrimary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => router.push('/trends')}
+            hitSlop={12}
+            style={{ marginLeft: theme.spacing.lg }}
+          >
             <Ionicons
               name="stats-chart-outline"
               size={22}

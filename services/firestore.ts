@@ -34,6 +34,7 @@ import type {
   RecentFood,
   Recipe,
   UserSettings,
+  WeightEntry,
 } from '../types';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -263,6 +264,57 @@ export function subscribeToDaysInRange(
     },
     (error) => {
       console.error('subscribeToDaysInRange error:', error);
+      callback([]);
+    },
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Weight entries
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Upserts the weigh-in for a given date.
+ */
+export async function setWeight(
+  uid: string,
+  date: string,
+  weight: number,
+): Promise<void> {
+  const entry: WeightEntry = { date, weight, updatedAt: Date.now() };
+  const ref = doc(db, 'users', uid, 'weights', date);
+  await setDoc(ref, entry);
+}
+
+/**
+ * Deletes the weigh-in for a given date.
+ */
+export async function deleteWeight(uid: string, date: string): Promise<void> {
+  const ref = doc(db, 'users', uid, 'weights', date);
+  await deleteDoc(ref);
+}
+
+/**
+ * Subscribes to weigh-ins from `startDate` (inclusive) onward,
+ * sorted by date ascending.
+ *
+ * @returns An unsubscribe function.
+ */
+export function subscribeToWeights(
+  uid: string,
+  startDate: string,
+  callback: (weights: WeightEntry[]) => void,
+): () => void {
+  const col = collection(db, 'users', uid, 'weights');
+  const q = query(col, where('date', '>=', startDate), orderBy('date', 'asc'));
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(snap.docs.map((d) => d.data() as WeightEntry));
+    },
+    (error) => {
+      console.error('subscribeToWeights error:', error);
       callback([]);
     },
   );
