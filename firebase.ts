@@ -8,7 +8,7 @@
 import { initializeApp } from 'firebase/app';
 // @ts-expect-error — getReactNativePersistence is exported from the RN bundle
 import { initializeAuth, getReactNativePersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // ── Firebase project config ─────────────────────────────────────────────────
@@ -38,5 +38,11 @@ export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
-/** Cloud Firestore instance. */
-export const db = getFirestore(app);
+/**
+ * Cloud Firestore instance.
+ *
+ * `ignoreUndefinedProperties` drops undefined fields from writes instead of
+ * rejecting the whole document — optional fields like serving size aren't
+ * always applicable and must not block a write.
+ */
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
