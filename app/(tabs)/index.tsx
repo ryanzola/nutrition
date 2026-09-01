@@ -24,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useApp, getDateString } from '@/context/AppContext';
 import { useDay } from '@/hooks/useDay';
 import { useFavorites } from '@/hooks/useFavorites';
+import { useScrollToTopOnFocus } from '@/hooks/useScrollToTopOnFocus';
 import { theme } from '@/constants/theme';
 import { MEAL_TYPES, MEAL_LABELS } from '@/constants/defaults';
 import type { MealType, FoodEntry } from '@/types';
@@ -42,6 +43,7 @@ export default function DashboardScreen() {
     selectedDate,
   );
   const { isFavorited, toggleFavorite } = useFavorites(uid);
+  const scrollRef = useScrollToTopOnFocus();
 
   // ── Modal / sheet state ────────────────────────────────────────────────
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -278,18 +280,7 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.headerRight}>
-          <Pressable onPress={() => router.push('/weight')} hitSlop={12}>
-            <Ionicons
-              name="scale-outline"
-              size={22}
-              color={theme.colors.textPrimary}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => router.push('/trends')}
-            hitSlop={12}
-            style={{ marginLeft: theme.spacing.lg }}
-          >
+          <Pressable onPress={() => router.push('/trends')} hitSlop={12}>
             <Ionicons
               name="stats-chart-outline"
               size={22}
@@ -307,21 +298,11 @@ export default function DashboardScreen() {
               color={theme.colors.textPrimary}
             />
           </Pressable>
-          <Pressable
-            onPress={() => router.push('/info')}
-            hitSlop={12}
-            style={{ marginLeft: theme.spacing.lg }}
-          >
-            <Ionicons
-              name="information-circle-outline"
-              size={22}
-              color={theme.colors.textPrimary}
-            />
-          </Pressable>
         </View>
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

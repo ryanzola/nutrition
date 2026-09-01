@@ -1,7 +1,7 @@
 /**
- * app/info.tsx
+ * app/(tabs)/settings.tsx
  *
- * Info / Settings hub screen.
+ * Settings hub tab.
  * Provides educational content about calories and macros,
  * plus navigation rows to individual settings screens.
  */
@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { theme } from '@/constants/theme';
+import { useScrollToTopOnFocus } from '@/hooks/useScrollToTopOnFocus';
 
 // ── Setting row data ──────────────────────────────────────────────────────
 
@@ -30,18 +31,19 @@ const SETTINGS_ROWS = [
 // ── Component ─────────────────────────────────────────────────────────────
 
 export default function InfoScreen() {
+  const scrollRef = useScrollToTopOnFocus();
+
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Info</Text>
+        <View style={{ width: 24 }} />
+        <Text style={styles.headerTitle}>Settings</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}

@@ -17,12 +17,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 
 import { theme } from '@/constants/theme';
 import { getDateString, useApp } from '@/context/AppContext';
 import { useWeights } from '@/hooks/useWeights';
+import { useScrollToTopOnFocus } from '@/hooks/useScrollToTopOnFocus';
 import WeightChart from '@/components/WeightChart';
 import CalendarBottomSheet from '@/components/CalendarBottomSheet';
 
@@ -50,6 +50,7 @@ const fmtWeight = (n: number) => (Math.round(n * 10) / 10).toFixed(1);
 export default function WeightScreen() {
   const { uid } = useApp();
   const { weights, logWeight } = useWeights(uid);
+  const scrollRef = useScrollToTopOnFocus();
 
   const [input, setInput] = useState('');
   const [window, setWindow] = useState<ChartWindow>('week');
@@ -126,9 +127,7 @@ export default function WeightScreen() {
     <SafeAreaView style={styles.safe} edges={['top']}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.textPrimary} />
-        </Pressable>
+        <View style={{ width: 22 }} />
         <Text style={styles.headerTitle}>Weight</Text>
         <Pressable onPress={handleCopyReport} hitSlop={12}>
           <Ionicons
@@ -140,6 +139,7 @@ export default function WeightScreen() {
       </View>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
