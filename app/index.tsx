@@ -278,7 +278,18 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.headerRight}>
-          <Pressable onPress={() => setCalendarVisible(true)} hitSlop={12}>
+          <Pressable onPress={() => router.push('/trends')} hitSlop={12}>
+            <Ionicons
+              name="stats-chart-outline"
+              size={22}
+              color={theme.colors.textPrimary}
+            />
+          </Pressable>
+          <Pressable
+            onPress={() => setCalendarVisible(true)}
+            hitSlop={12}
+            style={{ marginLeft: theme.spacing.lg }}
+          >
             <Ionicons
               name="calendar-outline"
               size={22}

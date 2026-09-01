@@ -19,6 +19,7 @@ import {
   deleteDoc,
   onSnapshot,
   query,
+  where,
   orderBy,
   limit,
 } from 'firebase/firestore';
@@ -234,6 +235,35 @@ export function subscribeToDay(
       console.error('subscribeToDay error:', error);
       // Still provide empty data so the UI doesn't break
       callback(createEmptyDay(date));
+    },
+  );
+}
+
+/**
+ * Subscribes to all day documents within an inclusive date range.
+ * Days with no logged data have no document and are simply absent.
+ *
+ * @param startDate - Range start in YYYY-MM-DD format (inclusive)
+ * @param endDate   - Range end in YYYY-MM-DD format (inclusive)
+ * @returns An unsubscribe function.
+ */
+export function subscribeToDaysInRange(
+  uid: string,
+  startDate: string,
+  endDate: string,
+  callback: (days: DayDocument[]) => void,
+): () => void {
+  const col = collection(db, 'users', uid, 'days');
+  const q = query(col, where('date', '>=', startDate), where('date', '<=', endDate));
+
+  return onSnapshot(
+    q,
+    (snap) => {
+      callback(snap.docs.map((d) => d.data() as DayDocument));
+    },
+    (error) => {
+      console.error('subscribeToDaysInRange error:', error);
+      callback([]);
     },
   );
 }
