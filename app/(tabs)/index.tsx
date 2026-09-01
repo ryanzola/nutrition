@@ -399,8 +399,6 @@ export default function DashboardScreen() {
             onEntryLongPress={(entry) => handleEntryLongPress(entry, mealType)}
           />
         ))}
-
-        <View style={{ height: 40 }} />
       </ScrollView>
 
       {/* ── Modals / Sheets ──────────────────────────────────────────── */}
