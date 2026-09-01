@@ -101,7 +101,7 @@ export default function QuickAddModal({
         name:          initialValues?.name ?? '',
         servingAmount: initialValues?.servingAmount != null ? String(initialValues.servingAmount) : '',
         servingUnit:   initialValues?.servingUnit ?? '',
-        servings:      '1',
+        servings:      initialValues?.servings != null ? String(initialValues.servings) : '1',
         calories:      initialValues?.calories != null ? String(initialValues.calories) : '',
         carbs:         initialValues?.carbs != null ? String(initialValues.carbs) : '',
         fat:           initialValues?.fat != null ? String(initialValues.fat) : '',

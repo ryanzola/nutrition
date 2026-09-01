@@ -119,8 +119,9 @@ export default function MealScreen() {
 
   const handleAddFavoriteToMeal = useCallback(
     (favorite: FavoriteFood) => {
-      // Open QuickAddModal pre-filled so user can adjust servings
-      setSelectedFavorite(favorite);
+      // Open QuickAddModal pre-filled so user can adjust servings.
+      // Favorites always start at 1 serving; recents keep their last-used amount.
+      setSelectedFavorite({ ...favorite, servings: undefined });
       setSelectedSearchResult(null);
       setQuickAddVisible(true);
     },
